@@ -106,7 +106,7 @@ if ( -e "$BASE_PATH/.repo/egit_project.list" )
 	open${bo}FILE, "<$BASE_PATH/.repo/egit_project.list"$bc or die "Cannot load egit project list\n";
 	while ( <FILE> )
 	{
-		\$_ =~ s/[\s\r\n]+$/\1/s;
+		\$_ =~ s/[\s\r\n]+\$/\1/s;
 		@pdef = split /:/;
 		
 		if ( \$projects{\$pdef[1]} )
