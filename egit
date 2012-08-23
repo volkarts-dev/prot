@@ -53,10 +53,12 @@ __build_egit_manifest()
 {
 	if [ \
 		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
-		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" \
+		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
+		"$1" == "force" \
 		]; then		
 		bo=\(
 		bc=\)
+		t=\`
 		
 		PERL_CODE=$(cat <<PERL_CODE
 
@@ -135,7 +137,8 @@ PERL_CODE
 	
 __read_repo()
 {
-	__build_egit_manifest
+	__build_egit_manifest "$@"
+	
 	if [ $? -ne 0 ]; then
 		exit $?
 	fi
@@ -297,16 +300,34 @@ __exec_git()
 __egit()
 {
 	__set_base
+	
 	if [ $? -ne 0 ]; then
 		echo "Select a repo first"
 		return 1
 	fi
 	
 	
-	__read_repo
+	# parse options
+	while [ 1 = 1 ]; do
+		_option=$1
+		if [ "${_option:0:2}" == "-r" ]; then
+			read_repo_options=("force")
+		else
+			break;
+		fi
+		
+		shift
+	done
+	
+	
+	__read_repo "${read_repo_options[@]}"
 	
 
-	if [ "$1" == "gui" ]; then
+	if [ "$1" == "rebuild" ]; then
+		__build_egit_manifest "force"
+		return $?
+		
+	elif [ "$1" == "gui" ]; then
 		commands=( \
 			"$1" \
 			'__repo_status' \
