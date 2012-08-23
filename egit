@@ -134,7 +134,8 @@ close(FILE);
 PERL_CODE
 		)
 	
-		#echo $PERL_CODE
+		
+		echo "### Building manifest ###"
 	
 		echo $PERL_CODE | perl
 		return $?
