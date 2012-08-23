@@ -121,7 +121,13 @@ if ( -e "$BASE_PATH/.repo/egit_project.list" )
 open${bo}FILE, ">$BASE_PATH/.repo/egit_project.list"$bc or die "Cannot write egit project list\n";
 foreach ( @project_list )
 {
-	print FILE "\$projects{\$_}\n";
+	\$status = ${t}git branch | awk '/^\*/ { print \\\$1 \\\$2 \\\$3 }'$t;
+	\$status =~ s/[\s\r\n]+\$/\1/s;
+	
+	if ( \$status !~ /^\*\(/ )
+	{
+		print FILE "\$projects{\$_}\n";
+	}
 }
 close(FILE);
 
