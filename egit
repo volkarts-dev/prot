@@ -210,11 +210,15 @@ __exec_git()
 	shift
 	
 	P_RREV_U=
+	P_LREV_U=
 	DIR=lo
 	while [ 1 = 1 ]; do
 		internal_cmd=$1
 		if [ "${internal_cmd:0:4}" == "!rb:" ]; then
 			P_RREV_U=${internal_cmd:4}
+			shift
+		elif [ "${internal_cmd:0:4}" == "!lb:" ]; then
+			P_LREV_U=${internal_cmd:4}
 			shift
 		elif [ "${internal_cmd:0:5}" == "!dir:" ]; then
 			DIR=${internal_cmd:5}
@@ -237,8 +241,12 @@ __exec_git()
 			break;
 		fi
 		
-		P_LREV=$(git branch | awk '/^\*/ { print $2 }')
-
+		P_LREV=$P_LREV_U
+		
+		if [ "$P_LREV" == "" ]; then
+			P_LREV=$(git branch | awk '/^\*/ { print $2 }')
+		fi
+		
 		
 		P_RREV=$P_RREV_U
 		
@@ -377,14 +385,15 @@ __egit()
 		
 	elif [ "$1" == "upload" ]; then
 		if [ "$2" == "" ]; then
-			echo "usage: egit $1 <remote>"
+			echo "usage: egit $1 <remote> [local branch]"
 			return 1
 		fi
 
 		commands=( \
 			"$1" \
+			"!lb:$3" \
 			"!dir:lr" \
-			"git push $2 \$P_RREV" \
+			"git push $2 \$P_LREV" \
 		)
 		
 	elif [ "$1" == "gitk" ]; then
