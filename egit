@@ -37,12 +37,12 @@ __set_base()
 {
 	BASE_PATH=$PWD
 	
-	while [ "$BASE_PATH" != "" ]; do
+	while [ "$BASE_PATH" != "" -a "$BASE_PATH" != "/" ]; do
 		if [ -e "$BASE_PATH/.repo/manifest.xml" ]; then
 			return 0
 		fi
 		
-		BASE_PATH=`basename "$BASE_PATH"`
+		BASE_PATH=`dirname "$BASE_PATH"`
 	done
 	
 	return 1
