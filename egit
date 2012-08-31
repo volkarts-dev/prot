@@ -115,7 +115,15 @@ if ( -e "$BASE_PATH/.repo/egit_project.list" )
 		
 		if ( \$projects{\$pdef[1]} )
 		{
-			\$projects{\$pdef[1]} = "\$projects{\$pdef[1]}:\$pdef[2]";
+			if ( \$pdef[0] =~ /^#/ )
+			{
+				\$projects{\$pdef[1]} = "#\$projects{\$pdef[1]}"
+			}
+			
+			if ( \$pdef[2] )
+			{
+				\$projects{\$pdef[1]} = "\$projects{\$pdef[1]}:\$pdef[2]";
+			}
 		}
 	}
 	close(FILE);
