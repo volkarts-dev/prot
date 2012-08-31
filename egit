@@ -155,7 +155,7 @@ __read_repo()
 	fi
 	
 	
-	PROJECTS=($(cat $BASE_PATH/.repo/egit_project.list))
+	PROJECTS=($(cat $BASE_PATH/.repo/egit_project.list | grep "^[^#]"))
 }
 
 
