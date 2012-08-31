@@ -155,10 +155,46 @@ PERL_CODE
 		return $?
 	fi
 }	
+
+
+__filter_projects()
+{
+	if [ $# -eq 0 ]; then
+		return
+	fi
 	
+	
+	declare -a _projects=("${PROJECTS[@]}")
+
+	PROJECTS=()
+	
+	for _project in "${_projects[@]}"; do
+		for _arg in "$@"; do
+			__d "Check $_project against $_arg"
+			
+			if [[ "$_project" == *$_arg* ]]; then
+				PROJECTS=("${PROJECTS[@]}" "$_project")
+			fi
+		done
+	done
+}
+
+
 __read_repo()
 {
-	__build_egit_manifest "$@"
+	desired_projects=()
+	force=
+	
+	for _arg in "$@"; do
+		if [ "$_arg" == "-f" ]; then
+			force="force"
+		else
+			desired_projects=("${desired_projects[@]}" "$_arg")
+		fi
+	done
+
+	
+	__build_egit_manifest $force
 	
 	if [ $? -ne 0 ]; then
 		exit $?
@@ -166,6 +202,9 @@ __read_repo()
 	
 	
 	PROJECTS=($(cat $BASE_PATH/.repo/egit_project.list | grep "^[^#]"))
+	
+	
+	__filter_projects "${desired_projects[@]}"
 }
 
 
@@ -338,90 +377,122 @@ __egit()
 	
 	
 	# parse options
-	while [ 1 = 1 ]; do
-		_option=$1
-		if [ "${_option:0:2}" == "-r" ]; then
-			read_repo_options=("force")
+	OPTIONS=()
+	_opt_end=0
+	read_repo_options=()
+	for _opt in "$@"; do
+		if [ $_opt_end -eq 0 -a "${_opt:0:2}" == "-r" ]; then
+			read_repo_options=("${read_repo_options[@]}" "-f")
+		elif [ "${_opt:0:1}" == "@" ]; then
+			read_repo_options=("${read_repo_options[@]}" "${_opt:1}")
 		else
-			break;
+			OPTIONS=("${OPTIONS[@]}" "$_opt")
+			_opt_end=1
 		fi
-		
-		shift
 	done
+	
+
+	# intern commands
+	if [ "${OPTIONS[0]}" == "rebuild" ]; then
+		__build_egit_manifest "force"
+		return $?
+	
+	elif [ "${OPTIONS[0]}" == "version" ]; then
+		echo "egit version 1.0"
+		echo ""
+		echo -e "Copyright 2012 Daniel Volk <mail@volkarts.com>"
+		echo ""
+
+		return 0
+	
+	elif [ "${OPTIONS[0]}" == "" -o "${OPTIONS[0]}" == "help" ]; then
+		echo "usage: egit [-r] <egit command> [git options] [@<project pattern>] ..."
+		echo "       egit rebuild"
+		echo ""
+		echo "  egit command:"
+		echo "    gui       run git gui in any repo that has a dirty working tree"
+		echo "    gui!      run git gui whether the working tree is dirty or not"
+		echo "    update    update repos from a given remote"
+		echo "    upload    upload every repo to a given remote"
+		echo "    rebuild   rebuild the egit project list"
+		echo "    version   show version"
+		echo "    help      show this help"
+		echo "    <all valid git commands>"
+		echo ""
+		echo "  options:"
+		echo "    -r        rebuild the egit project list before running the command"
+		echo "    [git options] all options valid to the specified git command"
+		echo ""
+		echo "  project patterns:"
+		echo "    [@<project patterns>] allows to filter project by name"
+		echo "                          only parts of the project name need to be given"
+		echo "                          multiple definitions are possible"
+		echo ""
+		echo "Copyright 2012 Daniel Volk <mail@volkarts.com>"
+		echo ""
+		
+		return 1
+
+	fi
 	
 	
 	__read_repo "${read_repo_options[@]}"
 	
 
-	if [ "$1" == "rebuild" ]; then
-		__build_egit_manifest "force"
-		return $?
-		
-	elif [ "$1" == "gui" ]; then
+	# git commands
+	if [ "${OPTIONS[0]}" == "gui" ]; then
 		commands=( \
-			"$1" \
+			"${OPTIONS[0]}" \
 			'__repo_status' \
 			'git gui' \
 		)
 		
-	elif [ "$1" == "gui!" ]; then
-		shift
+	elif [ "${OPTIONS[0]}" == "gui!" ]; then
+		unset OPTIONS[0]
 		
 		commands=( \
 			"gui!" \
-			"git gui $*" \
+			"git gui ${OPTIONS[@]}" \
 		)
 		
-	elif [ "$1" == "update" ]; then
-		if [ "$2" == "" ]; then
-			echo "usage: egit $1 <remote> [remote branch]"
+	elif [ "${OPTIONS[0]}" == "update" ]; then
+		if [ "${OPTIONS[1]}" == "" ]; then
+			echo "usage: egit ${OPTIONS[0]} <remote> [remote branch]"
 			return 1
 		fi
 
 		commands=( \
-			"$1" \
-			"!rb:$3" \
+			"${OPTIONS[0]}" \
+			"!rb:${OPTIONS[2]}" \
 			"!dir:rl" \
-			"git fetch $2" \
-			"git merge $2/\$P_RREV" \
+			"git fetch ${OPTIONS[1]}" \
+			"git merge ${OPTIONS[1]}/\$P_RREV" \
 		)
 		
-	elif [ "$1" == "upload" ]; then
-		if [ "$2" == "" ]; then
-			echo "usage: egit $1 <remote> [local branch]"
+	elif [ "${OPTIONS[0]}" == "upload" ]; then
+		if [ "${OPTIONS[1]}" == "" ]; then
+			echo "usage: egit ${OPTIONS[0]} <remote> [local branch]"
 			return 1
 		fi
 
 		commands=( \
-			"$1" \
-			"!lb:$3" \
+			"${OPTIONS[0]}" \
+			"!lb:${OPTIONS[2]}" \
 			"!dir:lr" \
-			"git push $2 \$P_LREV" \
+			"git push ${OPTIONS[1]} \$P_LREV" \
 		)
 		
-	elif [ "$1" == "gitk" ]; then
+	elif [ "${OPTIONS[0]}" == "gitk" ]; then
 
 		commands=( \
-			"$1" \
-			"$* &" \
+			"${OPTIONS[0]}" \
+			"${OPTIONS[@]} &" \
 		)
 		
 	else
-		if [ "$1" == "" ]; then
-			echo "usage: egit <egit command> ..."
-			echo "  egit command:"
-			echo -e "    gui       run git gui in any repo that has a dirty working tree"
-			echo -e "    gui!      run git gui whether the working tree is dirty or not"
-			echo -e "    update    update repos from a given remote"
-			echo -e "    upload    upload every repo to a given remote"
-			echo -e "    <all valid git commands>"
-			
-			return 1
-		fi
-		
 		commands=( \
-			"$1" \
-			"git $*" \
+			"${OPTIONS[0]}" \
+			"git ${OPTIONS[@]}" \
 		)
 		
 	fi
