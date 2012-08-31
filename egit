@@ -95,8 +95,12 @@ while ( \$file =~ /<project$bo[^>]+$bc>/g )
 	
 	\$pid = "\$name:\$path";
 	
+	if ( !\$projects{\$path} )
+	{
+		push @project_list, \$path;
+	}
 	\$projects{\$path} = \$pid;
-	push @project_list, \$path;
+	
 }
 
 	
