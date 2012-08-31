@@ -147,7 +147,9 @@ PERL_CODE
 		)
 	
 		
-		echo "### Building manifest ###"
+		echo -n "### Building manifest "
+		if [ "$1" == "force" ]; then echo -n "(forced)"; else echo -n "(update)"; fi
+		echo " ###"
 	
 		echo $PERL_CODE | perl
 		return $?
@@ -171,7 +173,7 @@ __failed()
 {
 	__last_git_failed=1
 	
-	echo -e "\033[1;31mFailed\033[0;37m"
+	echo -e "\033[1;31mFailed\033[0m"
 }
 
 
@@ -235,8 +237,9 @@ __exec_git()
 		P_NAME=${pattrs[0]}
 		P_PATH=${pattrs[1]}
 
-		cd $BASE_PATH/$P_PATH
+		cd $BASE_PATH/$P_PATH 2>/dev/null
 		if [ $? -ne 0 ]; then
+			echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m"
 			__failed
 			break;
 		fi
@@ -329,7 +332,7 @@ __egit()
 	__set_base
 	
 	if [ $? -ne 0 ]; then
-		echo "Select a repo first"
+		echo "Not running within a repo root directory"
 		return 1
 	fi
 	
