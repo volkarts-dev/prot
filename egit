@@ -452,7 +452,7 @@ __egit()
 		
 		commands=( \
 			"gui!" \
-			"git gui ${OPTIONS[@]}" \
+			"git gui ${OPTIONS[*]}" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
@@ -486,17 +486,17 @@ __egit()
 
 		commands=( \
 			"${OPTIONS[0]}" \
-			"${OPTIONS[@]} &" \
+			"${OPTIONS[*]} &" \
 		)
 		
 	else
 		commands=( \
 			"${OPTIONS[0]}" \
-			"git ${OPTIONS[@]}" \
+			"git ${OPTIONS[*]}" \
 		)
 		
 	fi
-	
+
 	
 	__exec_git "${commands[@]}"
 }
