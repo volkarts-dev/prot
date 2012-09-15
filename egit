@@ -484,7 +484,10 @@ __egit()
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
-
+		if [ "${OPTIONS[0]}" == "k" ]; then
+			OPTIONS[0]="gitk"
+		fi
+		
 		commands=( \
 			"${OPTIONS[0]}" \
 			"${OPTIONS[*]} &" \
