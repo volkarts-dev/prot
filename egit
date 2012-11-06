@@ -412,6 +412,7 @@ __egit()
 		echo "  egit command:"
 		echo "    gui       run git gui in any repo that has a dirty working tree"
 		echo "    gui!      run git gui whether the working tree is dirty or not"
+		echo "    gitk,k    run gitk in every repo and return immediatly"
 		echo "    update    update repos from a given remote"
 		echo "    upload    upload every repo to a given remote"
 		echo "    rebuild   rebuild the egit project list"
@@ -482,8 +483,11 @@ __egit()
 			"git push ${OPTIONS[1]} \$P_LREV" \
 		)
 		
-	elif [ "${OPTIONS[0]}" == "gitk" ]; then
-
+	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
+		if [ "${OPTIONS[0]}" == "k" ]; then
+			OPTIONS[0]="gitk"
+		fi
+		
 		commands=( \
 			"${OPTIONS[0]}" \
 			"${OPTIONS[*]} &" \
