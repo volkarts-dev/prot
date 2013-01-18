@@ -57,6 +57,29 @@ __build_egit_manifest()
 	fi
 
 
+	if [ "$1" != "force" ]; then
+		doit=0
+		if [ "$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+			doit=1
+		else
+			if [ "$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+				doit=1
+			else
+				for f in `ls $BASE_PATH/.repo/local_manifests/*.xml 2>/dev/null`; do
+					if [ "$f" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+						doit=1
+						break;
+					fi
+				done
+			fi
+		fi
+
+		if [ $doit -eq 0 ]; then
+			return;
+		fi
+	fi
+
+
 	if [ \
 		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
 		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
@@ -77,6 +100,14 @@ close(FILE);
 if ( -e "$BASE_PATH/.repo/local_manifest.xml" )
 {
 	open${bo}FILE, "<$BASE_PATH/.repo/local_manifest.xml"$bc or die "Cannot load local repo list\n";
+	\$file .= \$_ while ( <FILE> );
+	close(FILE);
+}
+
+@local_manifests = <$BASE_PATH/.repo/local_manifests/*.xml>;
+foreach \$local_manifest (@local_manifests)
+{
+	open${bo}FILE, "<\$local_manifest"$bc or die "Cannot load local repo list\n";
 	\$file .= \$_ while ( <FILE> );
 	close(FILE);
 }
