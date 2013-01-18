@@ -113,7 +113,7 @@ foreach \$local_manifest (@local_manifests)
 }
 
 
-\$file =~ s/<!--.*?-->//g;
+\$file =~ s/<!--.*?-->//gs;
 
 %projects = ();
 @project_list = ();
