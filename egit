@@ -493,6 +493,15 @@ __egit()
 			"${OPTIONS[*]} &" \
 		)
 		
+	elif [ "${OPTIONS[0]}" == "gc" ]; then
+		commands=( \
+			"${OPTIONS[0]}" \
+			"git pack-refs --prune" \
+			"git reflog expire --all" \
+			"git repack -a -d -l" \
+			"git rerere gc" \
+		)
+		
 	else
 		commands=( \
 			"${OPTIONS[0]}" \
