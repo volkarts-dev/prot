@@ -259,6 +259,7 @@ __repo_status()
 	status=$(git status -s)
 	
 	if [ "$status" != "" ]; then
+		echo "Working directory is dirty. Start git gui ..."
 		return 0
 	else
 		return 255
@@ -528,6 +529,15 @@ __egit()
 		commands=( \
 			"${OPTIONS[0]}" \
 			"${OPTIONS[*]} &" \
+		)
+		
+	elif [ "${OPTIONS[0]}" == "gc" ]; then
+		commands=( \
+			"${OPTIONS[0]}" \
+			"git pack-refs --prune" \
+			"git reflog expire --all" \
+			"git repack -a -d -l" \
+			"git rerere gc" \
 		)
 		
 	else
