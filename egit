@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright 2012 by Daniel Volk <mail@volkarts.com>
+# Copyright 2012-2013 by Daniel Volk <mail@volkarts.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,10 @@ BASE_PATH=
 
 PROJECTS=()
 
-	
+
+EGIT_VERSION=1.1
+
+
 __d()
 {
 	[ $__debug -eq 1 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
@@ -436,9 +439,9 @@ __egit()
 		return $?
 	
 	elif [ "${OPTIONS[0]}" == "version" ]; then
-		echo "egit version 1.0"
+		echo "egit version $EGIT_VERSION"
 		echo ""
-		echo -e "Copyright 2012 Daniel Volk <mail@volkarts.com>"
+		echo -e "Copyright 2012-2013 Daniel Volk <mail@volkarts.com>"
 		echo ""
 
 		return 0
