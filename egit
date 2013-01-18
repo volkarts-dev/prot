@@ -51,6 +51,12 @@ __set_base()
 
 __build_egit_manifest()
 {
+	if [ ! -f "$BASE_PATH/.repo/manifest.xml" ]; then
+		# no android environment - skip building manifest
+		return;
+	fi
+
+
 	if [ \
 		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
 		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
