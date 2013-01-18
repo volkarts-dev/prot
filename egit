@@ -222,6 +222,7 @@ __repo_status()
 	status=$(git status -s)
 	
 	if [ "$status" != "" ]; then
+		echo "Working directory is dirty. Start git gui ..."
 		return 0
 	else
 		return 255
