@@ -212,7 +212,7 @@ __filter_projects()
 		for _arg in "$@"; do
 			__d "Check $_project against $_arg"
 			
-			if [[ "$_project" == *$_arg* ]]; then
+			if echo $_project | grep -i $_arg > /dev/null; then
 				PROJECTS=("${PROJECTS[@]}" "$_project")
 			fi
 		done
