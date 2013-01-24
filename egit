@@ -273,7 +273,10 @@ __repo_status()
 	local status=$(__git status -s)
 
 	if [ "$status" != "" ]; then
-		echo "Working directory is dirty. Start git gui ..."
+		if [ "$1" != "silent" ]; then
+			echo "Working directory is dirty. Start git gui ..."
+		fi
+		
 		return 0
 	else
 		return 255
@@ -312,6 +315,64 @@ __get_local_branch()
 }
 
 
+__switch_branch_temp()
+{
+	if [ "$LOCAL_BRANCH" == "$1" ]; then
+		return 0
+	fi
+	
+	
+	__repo_status "silent"
+	if [ $? -eq 0 ]; then
+		echo "Working directory dirty. Commit your changes first."
+		return 1
+	fi
+	
+	
+	echo "Switching to branch $1 for update"
+	
+	__git checkout "$1"
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+	
+	
+	return 0
+}
+
+
+__switch_back_branch_temp()
+{
+	if [ "$LOCAL_BRANCH" == "$1" ]; then
+		return 0
+	fi
+	
+	
+	echo -n "Switching back to branch $LOCAL_BRANCH"
+	if [ "$2" == "--rebase" ]; then
+		echo " and rebase to $1"
+	else
+		echo ""
+	fi
+	
+	__git checkout "$LOCAL_BRANCH"
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+	
+	
+	if [ "$2" == "--rebase" ]; then
+		__git rebase "$1"
+		if [ $? -ne 0 ]; then
+			return $?
+		fi
+	fi
+	
+	
+	return 0
+}
+
+
 __exec_git()
 {
 	ORIG_PATH=$PWD
@@ -346,10 +407,12 @@ __exec_git()
 	
 	
 	for p in ${PROJECTS[@]}; do
-		pattrs=($(echo $p | tr ":" "\n"))
+		P_ATTRS=($(echo $p | tr ":" "\n"))
 		
-		P_NAME=${pattrs[0]}
-		P_PATH=${pattrs[1]}
+		P_NAME=${P_ATTRS[0]}
+		P_PATH=${P_ATTRS[1]}
+		P_TRANSTABLE=${P_ATTRS[2]}
+		
 
 		cd $BASE_PATH/$P_PATH 2>/dev/null
 		if [ $? -ne 0 ]; then
@@ -379,7 +442,10 @@ __exec_git()
 		P_RREV=$(__translate_ref "$P_TRANSTABLE" "$P_RREV")		
 		
 		
-		branch_info="(\033[0;32m$P_LREV\033[0;37m"
+		local branch_info="(\033[0;32m$P_LREV\033[0;37m"
+		if [ "$LOCAL_BRANCH" != "$P_LREV" ]; then
+			branch_info+="[\033[0;32m$LOCAL_BRANCH\033[0;37m]"
+		fi
 		if [ "$DIR" != "lo" ]; then
 			if [ "$DIR" == "lr" ]; then
 				branch_info+=" -> "
@@ -534,16 +600,19 @@ __egit()
 		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
 		if [ "${OPTIONS[1]}" == "" ]; then
-			echo "usage: egit ${OPTIONS[0]} <remote> [remote branch]"
+			echo "usage: egit ${OPTIONS[0]} <remote> [remote branch [local branch [--rebase]]]"
 			return 1
 		fi
 
 		commands=( \
 			"${OPTIONS[0]}" \
 			"!rb:${OPTIONS[2]}" \
+			"!lb:${OPTIONS[3]}" \
 			"!dir:rl" \
 			"__git fetch ${OPTIONS[1]}" \
+			"__switch_branch_temp \$P_LREV" \
 			"__git merge ${OPTIONS[1]}/\$P_RREV" \
+			"__switch_back_branch_temp \$P_LREV ${OPTIONS[4]}" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "upload" ]; then
