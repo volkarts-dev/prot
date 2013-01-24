@@ -60,6 +60,8 @@ __build_egit_manifest()
 		return;
 	fi
 
+	
+	local doit
 
 	if [ "$1" != "force" ]; then
 		doit=0
@@ -233,8 +235,8 @@ __git()
 
 __read_repo()
 {
-	desired_projects=()
-	force=
+	local desired_projects=()
+	local force=
 	
 	for _arg in "$@"; do
 		if [ "$_arg" == "-f" ]; then
@@ -380,10 +382,10 @@ __exec_git()
 	trap __exit_hook INT TERM
 
 	
-	__last_git_failed=0
+	local __last_git_failed=0
 
 	
-	_cmd_info=$(echo $1 | tr '[a-z]' '[A-Z]')
+	local _cmd_info=$(echo $1 | tr '[a-z]' '[A-Z]')
 	shift
 	
 	P_RREV_U=
