@@ -18,6 +18,7 @@
 #
 
 __debug=0
+__cmd_output=1
 __dry_run=0
 
 
@@ -220,6 +221,16 @@ __filter_projects()
 }
 
 
+__git()
+{
+	if [ $__cmd_output -eq 1 ]; then
+		echo -e "\e[1;30mgit $@\e[0m" 1>&2
+	fi
+	
+	git "$@"
+}
+
+
 __read_repo()
 {
 	desired_projects=()
@@ -259,8 +270,8 @@ __failed()
 # return <skip> when working dir contains no changes
 __repo_status()
 {
-	status=$(git status -s)
-	
+	local status=$(__git status -s)
+
 	if [ "$status" != "" ]; then
 		echo "Working directory is dirty. Start git gui ..."
 		return 0
@@ -275,6 +286,12 @@ __exit_hook()
 	cd $ORIG_PATH
 	
 	exit 3
+}
+
+
+__get_local_branch()
+{
+	echo $(__git branch | awk '/^\*/ { print $2 }')
 }
 
 
@@ -324,10 +341,13 @@ __exec_git()
 			break;
 		fi
 		
-		P_LREV=$P_LREV_U
 		
+		local LOCAL_BRANCH=$(__get_local_branch)
+		
+		
+		P_LREV=$P_LREV_U
 		if [ "$P_LREV" == "" ]; then
-			P_LREV=$(git branch | awk '/^\*/ { print $2 }')
+			P_LREV=$LOCAL_BRANCH
 		fi
 		
 		
@@ -369,7 +389,11 @@ __exec_git()
 		
 		for cmd in "$@"; do
 			if [ $__dry_run -ne 1 ]; then
-				eval "__d \"Run: $cmd\""
+				if [ $__cmd_output -eq 1 ]; then
+					eval "echo -e \"\e[1;30m(MAIN CMD): $cmd\e[0m\""
+				else
+					eval "__d \"Run cmd: $cmd\""
+				fi
 			
 				eval $cmd
 				exit_code=$?
@@ -486,7 +510,7 @@ __egit()
 		commands=( \
 			"${OPTIONS[0]}" \
 			'__repo_status' \
-			'git gui' \
+			'__git gui' \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gui!" ]; then
@@ -494,7 +518,7 @@ __egit()
 		
 		commands=( \
 			"gui!" \
-			"git gui ${OPTIONS[*]}" \
+			"__git gui ${OPTIONS[*]}" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
@@ -507,8 +531,8 @@ __egit()
 			"${OPTIONS[0]}" \
 			"!rb:${OPTIONS[2]}" \
 			"!dir:rl" \
-			"git fetch ${OPTIONS[1]}" \
-			"git merge ${OPTIONS[1]}/\$P_RREV" \
+			"__git fetch ${OPTIONS[1]}" \
+			"__git merge ${OPTIONS[1]}/\$P_RREV" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "upload" ]; then
@@ -521,7 +545,7 @@ __egit()
 			"${OPTIONS[0]}" \
 			"!lb:${OPTIONS[2]}" \
 			"!dir:lr" \
-			"git push ${OPTIONS[1]} \$P_LREV" \
+			"__git push ${OPTIONS[1]} \$P_LREV" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
@@ -537,16 +561,16 @@ __egit()
 	elif [ "${OPTIONS[0]}" == "gc" ]; then
 		commands=( \
 			"${OPTIONS[0]}" \
-			"git pack-refs --prune" \
-			"git reflog expire --all" \
-			"git repack -a -d -l" \
-			"git rerere gc" \
+			"__git pack-refs --prune" \
+			"__git reflog expire --all" \
+			"__git repack -a -d -l" \
+			"__git rerere gc" \
 		)
 		
 	else
 		commands=( \
 			"${OPTIONS[0]}" \
-			"git ${OPTIONS[*]}" \
+			"__git ${OPTIONS[*]}" \
 		)
 		
 	fi
