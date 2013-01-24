@@ -289,6 +289,23 @@ __exit_hook()
 }
 
 
+__translate_ref()
+{
+	local mappings=($(echo $1 | tr "," "\n"))	
+	for m in "${mappings[@]}"; do
+		_a=($(echo $m | tr "=" "\n"))
+		
+		if [ "${_a[0]}" == "$2" ]; then
+			echo "${_a[1]}"
+			return 0
+		fi
+	done
+	
+	echo "$2"
+	return 0
+}
+
+
 __get_local_branch()
 {
 	echo $(__git branch | awk '/^\*/ { print $2 }')
@@ -349,23 +366,17 @@ __exec_git()
 		if [ "$P_LREV" == "" ]; then
 			P_LREV=$LOCAL_BRANCH
 		fi
-		
+
+		P_LREV=$(__translate_ref "$P_TRANSTABLE" "$P_LREV")
+
 		
 		P_RREV=$P_RREV_U
 		
 		if [ "$P_RREV" == "" ]; then
 			P_RREV=$P_LREV
 		fi
-
-		mappings=($(echo ${pattrs[2]} | tr "," "\n"))	
-		for m in "${mappings[@]}"; do
-			_a=($(echo $m | tr "=" "\n"))
-			
-			if [ "${_a[0]}" == "$P_RREV" ]; then
-				P_RREV=${_a[1]}
-				break
-			fi
-		done
+	
+		P_RREV=$(__translate_ref "$P_TRANSTABLE" "$P_RREV")		
 		
 		
 		branch_info="(\033[0;32m$P_LREV\033[0;37m"
