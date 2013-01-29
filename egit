@@ -345,6 +345,8 @@ __switch_branch_temp()
 
 __switch_back_branch_temp()
 {
+	local ret
+	
 	if [ "$LOCAL_BRANCH" == "$1" ]; then
 		return 0
 	fi
@@ -358,15 +360,17 @@ __switch_back_branch_temp()
 	fi
 	
 	__git checkout "$LOCAL_BRANCH"
-	if [ $? -ne 0 ]; then
-		return $?
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
 	fi
 	
 	
 	if [ "$2" == "--rebase" ]; then
 		__git rebase "$1"
-		if [ $? -ne 0 ]; then
-			return $?
+		ret=$?
+		if [ $ret -ne 0 ]; then
+			return $ret
 		fi
 	fi
 	
