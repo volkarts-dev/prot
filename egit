@@ -458,7 +458,7 @@ __exec_git()
 		fi
 		
 		
-		local LOCAL_BRANCH=$(__get_local_branch)
+		LOCAL_BRANCH=$(__get_local_branch)
 		
 		
 		P_LREV=$P_LREV_U
