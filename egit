@@ -379,6 +379,36 @@ __switch_back_branch_temp()
 }
 
 
+__git_gui()
+{
+	local ret
+
+	if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+		__git checkout "$1"
+		ret=$?
+		if [ $ret -ne 0 ]; then
+			return $ret
+		fi
+	fi
+	
+	__git gui
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+	
+	if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+		__git rebase "$1" "$LOCAL_BRANCH"
+		ret=$?
+		if [ $ret -ne 0 ]; then
+			return $ret
+		fi
+	fi
+
+	return 0
+}
+
+
 __exec_git()
 {
 	ORIG_PATH=$PWD
@@ -545,6 +575,14 @@ __usage()
 	elif [ "$1" == "version" ]; then
 		echo "egit version $EGIT_VERSION"
 	
+	elif [ "$1" == "gui" ]; then
+		echo "usage: egit $1 [local branch]"
+		echo ""
+		echo "  local branch:"
+		echo "    If specified and differs from currently checked out branch egit first"
+		echo "    switch to <local branch>, run git gui as normal and then rebase the former"
+		echo "    branch to the new top of <local branch>"
+	
 	elif [ "$1" == "update" ]; then
 		echo "usage: egit $1 <remote> [remote branch [local branch [--rebase]]]"
 	
@@ -610,8 +648,9 @@ __egit()
 	if [ "${OPTIONS[0]}" == "gui" ]; then
 		commands=( \
 			"${OPTIONS[0]}" \
+			"!lb:${OPTIONS[1]}" \
 			'__repo_status' \
-			'__git gui' \
+			"__git_gui \$P_LREV" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gui!" ]; then
