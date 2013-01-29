@@ -514,6 +514,53 @@ __exec_git()
 }
 
 
+__usage()
+{
+	if [ "$1" == "" ]; then
+		echo "usage: egit [-r] <egit command> [git options] [@<project pattern>] ..."
+		echo "       egit rebuild"
+		echo ""
+		echo "  egit command:"
+		echo "    gui       run git gui in any repo that has a dirty working tree"
+		echo "    gui!      run git gui whether the working tree is dirty or not"
+		echo "    gitk,k    run gitk in every repo"
+		echo "    update    update repos from a given remote"
+		echo "    upload    upload every repo to a given remote"
+		echo "    rebuild   rebuild the egit project list"
+		echo "    version   show version"
+		echo "    help      show this help"
+		echo "    <all valid git commands>"
+		echo ""
+		echo "  options:"
+		echo "    -r        rebuild the egit project list before running the command"
+		echo "    [git options] all options valid to the specified git command"
+		echo ""
+		echo "  project patterns:"
+		echo "    [@<project patterns>] allows to filter project by name"
+		echo "                          only parts of the project name need to be given"
+		echo "                          multiple definitions are possible"
+		echo ""
+		echo "  run 'egit <egit command> --help' to get detailed help for specified command"
+
+	elif [ "$1" == "version" ]; then
+		echo "egit version $EGIT_VERSION"
+	
+	elif [ "$1" == "update" ]; then
+		echo "usage: egit $1 <remote> [remote branch [local branch [--rebase]]]"
+	
+	elif [ "$1" == "upload" ]; then
+		echo "usage: egit $1 <remote> [local branch]"
+		
+	else
+		echo "No detailed help for command '$1' available. Try 'egit help'"
+	fi
+		
+	echo ""
+	echo "Copyright 2012-2013 Daniel Volk <mail@volkarts.com>"
+	echo ""
+}
+
+	
 __egit()
 {
 	__set_base
@@ -545,43 +592,14 @@ __egit()
 		__build_egit_manifest "force"
 		return $?
 	
-	elif [ "${OPTIONS[0]}" == "version" ]; then
-		echo "egit version $EGIT_VERSION"
-		echo ""
-		echo -e "Copyright 2012-2013 Daniel Volk <mail@volkarts.com>"
-		echo ""
-
-		return 0
-	
-	elif [ "${OPTIONS[0]}" == "" -o "${OPTIONS[0]}" == "help" ]; then
-		echo "usage: egit [-r] <egit command> [git options] [@<project pattern>] ..."
-		echo "       egit rebuild"
-		echo ""
-		echo "  egit command:"
-		echo "    gui       run git gui in any repo that has a dirty working tree"
-		echo "    gui!      run git gui whether the working tree is dirty or not"
-		echo "    gitk,k    run gitk in every repo and return immediatly"
-		echo "    update    update repos from a given remote"
-		echo "    upload    upload every repo to a given remote"
-		echo "    rebuild   rebuild the egit project list"
-		echo "    version   show version"
-		echo "    help      show this help"
-		echo "    <all valid git commands>"
-		echo ""
-		echo "  options:"
-		echo "    -r        rebuild the egit project list before running the command"
-		echo "    [git options] all options valid to the specified git command"
-		echo ""
-		echo "  project patterns:"
-		echo "    [@<project patterns>] allows to filter project by name"
-		echo "                          only parts of the project name need to be given"
-		echo "                          multiple definitions are possible"
-		echo ""
-		echo "Copyright 2012 Daniel Volk <mail@volkarts.com>"
-		echo ""
+	elif [ "${OPTIONS[0]}" == "" -o "${OPTIONS[0]}" == "help" -o "${OPTIONS[0]}" == "version" -o "${OPTIONS[1]}" == "--help" ]; then
+		__usage "${OPTIONS[0]}"
 		
-		return 1
-
+		if [ "${OPTIONS[0]}" == "" ]; then
+			return 1
+		else
+			return 0
+		fi
 	fi
 	
 	
@@ -606,7 +624,7 @@ __egit()
 		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
 		if [ "${OPTIONS[1]}" == "" ]; then
-			echo "usage: egit ${OPTIONS[0]} <remote> [remote branch [local branch [--rebase]]]"
+			__usage "${OPTIONS[0]}"
 			return 1
 		fi
 
@@ -623,7 +641,7 @@ __egit()
 		
 	elif [ "${OPTIONS[0]}" == "upload" ]; then
 		if [ "${OPTIONS[1]}" == "" ]; then
-			echo "usage: egit ${OPTIONS[0]} <remote> [local branch]"
+			__usage "${OPTIONS[0]}"
 			return 1
 		fi
 
