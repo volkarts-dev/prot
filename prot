@@ -28,7 +28,7 @@ BASE_PATH=
 PROJECTS=()
 
 
-EGIT_VERSION=1.4
+PROT_VERSION=1.4
 
 
 __d()
@@ -42,7 +42,7 @@ __set_base()
 	BASE_PATH=$PWD
 	
 	while [ "$BASE_PATH" != "" -a "$BASE_PATH" != "/" ]; do
-		if [ -e "$BASE_PATH/.repo/manifest.xml" ]; then
+		if [ -d	 "$BASE_PATH/.repo" ]; then
 			return 0
 		fi
 		
@@ -53,7 +53,15 @@ __set_base()
 }
 
 
-__build_egit_manifest()
+__handle_egit_compatibility()
+{
+	if [ -f "$BASE_PATH/.repo/egit_project.list" ]; then
+		mv "$BASE_PATH/.repo/egit_project.list" "$BASE_PATH/.repo/prot.list"
+	fi
+}
+
+
+__build_prot_manifest()
 {
 	if [ ! -f "$BASE_PATH/.repo/manifest.xml" ]; then
 		# no android environment - skip building manifest
@@ -65,14 +73,14 @@ __build_egit_manifest()
 
 	if [ "$1" != "force" ]; then
 		doit=0
-		if [ "$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+		if [ "$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
 			doit=1
 		else
-			if [ "$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+			if [ "$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
 				doit=1
 			else
 				for f in `ls $BASE_PATH/.repo/local_manifests/*.xml 2>/dev/null`; do
-					if [ "$f" -nt "$BASE_PATH/.repo/egit_project.list" ]; then
+					if [ "$f" -nt "$BASE_PATH/.repo/prot.list" ]; then
 						doit=1
 						break;
 					fi
@@ -87,8 +95,8 @@ __build_egit_manifest()
 
 
 	if [ \
-		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
-		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/egit_project.list" -o \
+		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/prot.list" -o \
+		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/prot.list" -o \
 		"$1" == "force" \
 		]; then		
 		bo=\(
@@ -148,9 +156,9 @@ while ( \$file =~ /<project$bo[^>]+$bc>/g )
 
 	
 	
-if ( -e "$BASE_PATH/.repo/egit_project.list" )
+if ( -e "$BASE_PATH/.repo/prot.list" )
 {
-	open${bo}FILE, "<$BASE_PATH/.repo/egit_project.list"$bc or die "Cannot load egit project list\n";
+	open${bo}FILE, "<$BASE_PATH/.repo/prot.list"$bc or die "Cannot load prot project list\n";
 	while ( <FILE> )
 	{
 		\$_ =~ s/[\s\r\n]+\$/\1/s;
@@ -173,7 +181,7 @@ if ( -e "$BASE_PATH/.repo/egit_project.list" )
 }
 
 
-open${bo}FILE, ">$BASE_PATH/.repo/egit_project.list"$bc or die "Cannot write egit project list\n";
+open${bo}FILE, ">$BASE_PATH/.repo/prot.list"$bc or die "Cannot write prot project list\n";
 foreach ( @project_list )
 {
 	\$status = ${t}cd $BASE_PATH/\$_ && git branch | awk '/^\*/ { print \\\$1 \\\$2 \\\$3 }'$t;
@@ -247,14 +255,14 @@ __read_repo()
 	done
 
 	
-	__build_egit_manifest $force
+	__build_prot_manifest $force
 	
 	if [ $? -ne 0 ]; then
 		exit $?
 	fi
 	
 	
-	PROJECTS=($(cat $BASE_PATH/.repo/egit_project.list | grep "^[^#]"))
+	PROJECTS=($(cat $BASE_PATH/.repo/prot.list | grep "^[^#]"))
 	
 	
 	__filter_projects "${desired_projects[@]}"
@@ -547,22 +555,22 @@ __exec_git()
 __usage()
 {
 	if [ "$1" == "" ]; then
-		echo "usage: egit [-r] <egit command> [git options] [@<project pattern>] ..."
-		echo "       egit rebuild"
+		echo "usage: prot [-r] <prot command> [git options] [@<project pattern>] ..."
+		echo "       prot rebuild"
 		echo ""
-		echo "  egit command:"
+		echo "  prot command:"
 		echo "    gui       run git gui in any repo that has a dirty working tree"
 		echo "    gui!      run git gui whether the working tree is dirty or not"
 		echo "    gitk,k    run gitk in every repo"
 		echo "    update    update repos from a given remote"
 		echo "    upload    upload every repo to a given remote"
-		echo "    rebuild   rebuild the egit project list"
+		echo "    rebuild   rebuild the prot project list"
 		echo "    version   show version"
 		echo "    help      show this help"
 		echo "    <all valid git commands>"
 		echo ""
 		echo "  options:"
-		echo "    -r        rebuild the egit project list before running the command"
+		echo "    -r        rebuild the prot project list before running the command"
 		echo "    [git options] all options valid to the specified git command"
 		echo ""
 		echo "  project patterns:"
@@ -570,27 +578,27 @@ __usage()
 		echo "                          only parts of the project name need to be given"
 		echo "                          multiple definitions are possible"
 		echo ""
-		echo "  run 'egit <egit command> --help' to get detailed help for specified command"
+		echo "  run 'prot <prot command> --help' to get detailed help for specified command"
 
 	elif [ "$1" == "version" ]; then
-		echo "egit version $EGIT_VERSION"
+		echo "prot version $PROT_VERSION"
 	
 	elif [ "$1" == "gui" ]; then
-		echo "usage: egit $1 [local branch]"
+		echo "usage: prot $1 [local branch]"
 		echo ""
 		echo "  local branch:"
-		echo "    If specified and differs from currently checked out branch egit first"
+		echo "    If specified and differs from currently checked out branch prot first"
 		echo "    switch to <local branch>, run git gui as normal and then rebase the former"
 		echo "    branch to the new top of <local branch>"
 	
 	elif [ "$1" == "update" ]; then
-		echo "usage: egit $1 <remote> [remote branch [local branch [--rebase]]]"
+		echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
 	
 	elif [ "$1" == "upload" ]; then
-		echo "usage: egit $1 <remote> [local branch]"
+		echo "usage: prot $1 <remote> [local branch]"
 		
 	else
-		echo "No detailed help for command '$1' available. Try 'egit help'"
+		echo "No detailed help for command '$1' available. Try 'prot help'"
 	fi
 		
 	echo ""
@@ -598,8 +606,8 @@ __usage()
 	echo ""
 }
 
-	
-__egit()
+
+__prot()
 {
 	__set_base
 	
@@ -607,8 +615,12 @@ __egit()
 		echo "Not running within a repo root directory"
 		return 1
 	fi
-	
-	
+
+
+	# compat
+	__handle_egit_compatibility
+
+
 	# parse options
 	OPTIONS=()
 	_opt_end=0
@@ -627,7 +639,7 @@ __egit()
 
 	# intern commands
 	if [ "${OPTIONS[0]}" == "rebuild" ]; then
-		__build_egit_manifest "force"
+		__build_prot_manifest "force"
 		return $?
 	
 	elif [ "${OPTIONS[0]}" == "" -o "${OPTIONS[0]}" == "help" -o "${OPTIONS[0]}" == "version" -o "${OPTIONS[1]}" == "--help" ]; then
@@ -733,5 +745,5 @@ __egit()
 
 
 # run main
-__egit "$@"
+__prot "$@"
 exit $?
