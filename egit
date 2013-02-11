@@ -275,10 +275,6 @@ __repo_status()
 	local status=$(__git status -s)
 
 	if [ "$status" != "" ]; then
-		if [ "$1" != "silent" ]; then
-			echo "Working directory is dirty. Start git gui ..."
-		fi
-		
 		return 0
 	else
 		return 255
@@ -324,7 +320,7 @@ __switch_branch_temp()
 	fi
 	
 	
-	__repo_status "silent"
+	__repo_status
 	if [ $? -eq 0 ]; then
 		echo "Working directory dirty. Commit your changes first."
 		return 1
@@ -382,6 +378,8 @@ __switch_back_branch_temp()
 __git_gui()
 {
 	local ret
+
+	echo "Working directory is dirty. Starting git gui ..."
 
 	if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
 		__git checkout "$1"
