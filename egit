@@ -518,6 +518,8 @@ __exec_git()
 			
 			if [ $exit_code -eq 255 ]; then
 				break	# not an error. just skip the subsequent commands
+			elif [ $exit_code -eq 254 ]; then
+				return 0	# not an error. User whats to exit
 			elif [ $exit_code -ne 0 ]; then
 				__failed
 				break;
@@ -706,6 +708,15 @@ __egit()
 			"__git reflog expire --all" \
 			"__git repack -a -d -l" \
 			"__git rerere gc" \
+		)
+		
+	elif [ "${OPTIONS[0]}" == "custom" ]; then
+		local _cmd_name="${OPTIONS[0]}(${OPTIONS[1]})"
+		unset OPTIONS[0]
+
+		commands=( \
+			"$_cmd_name" \
+			"${OPTIONS[*]}" \
 		)
 		
 	else
