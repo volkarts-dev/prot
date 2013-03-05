@@ -17,10 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-__debug=0
-__cmd_output=1
-__dry_run=0
-
 
 BASE_PATH=
 
@@ -33,7 +29,7 @@ PROT_VERSION=1.4.1
 
 __d()
 {
-	[ $__debug -eq 1 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
+	[ $FLAG_VERBOSITY -ge 3 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
 }
 
 
@@ -200,7 +196,7 @@ __filter_projects()
 
 __git()
 {
-	if [ $__cmd_output -eq 1 ]; then
+	if [ $FLAG_VERBOSITY -ge 1 ]; then
 		echo -e "\e[1;30mgit $@\e[0m" 1>&2
 	fi
 	
@@ -210,29 +206,9 @@ __git()
 
 __read_repo()
 {
-	local desired_projects=()
-	local force=
-	
-	for _arg in "$@"; do
-		if [ "$_arg" == "-f" ]; then
-			force="force"
-		else
-			desired_projects=("${desired_projects[@]}" "$_arg")
-		fi
-	done
-
-	
-	__build_prot_manifest $force
-	
-	if [ $? -ne 0 ]; then
-		exit $?
-	fi
-	
-	
 	PROJECTS=($(cat $BASE_PATH/.repo/prot.list | grep "^[^#]"))
 	
-	
-	__filter_projects "${desired_projects[@]}"
+	__filter_projects "$@"
 }
 
 
@@ -480,8 +456,8 @@ __exec_git()
 		
 		
 		for cmd in "$@"; do
-			if [ $__dry_run -ne 1 ]; then
-				if [ $__cmd_output -eq 1 ]; then
+			if [ $FLAG_DRYRUN -ne 1 ]; then
+				if [ $FLAG_VERBOSITY -ge 1 ]; then
 					eval "echo -e \"\e[1;30m(MAIN CMD): $cmd\e[0m\""
 				else
 					eval "__d \"Run cmd: $cmd\""
@@ -490,7 +466,7 @@ __exec_git()
 				eval $cmd
 				exit_code=$?
 			else
-				eval "__d \"Dry run: $cmd\""
+				eval "echo -e \"\e[0;36m(DRY RUN): $cmd\e[0m\""
 
 				exit_code=0
 			fi
@@ -527,54 +503,86 @@ __exec_git()
 
 __usage()
 {
-	if [ "$1" == "" ]; then
-		echo "usage: prot [-r] <prot command> [git options] [@<project pattern>] ..."
-		echo "       prot rebuild"
+	if [ $FLAG_HELP -eq 0 ]; then
+		# error 
+		if [ "$1" == "" ]; then
+			echo "ERROR: No command specified"
+		else
+			echo "ERROR: Missing options for command"
+		fi
 		echo ""
-		echo "  prot command:"
-		echo "    gui       run git gui in any repo that has a dirty working tree"
-		echo "    gui!      run git gui whether the working tree is dirty or not"
-		echo "    gitk,k    run gitk in every repo"
-		echo "    update    update repos from a given remote"
-		echo "    upload    upload every repo to a given remote"
-		echo "    rebuild   rebuild the prot project list"
-		echo "    version   show version"
-		echo "    help      show this help"
-		echo "    gc        run garbage collector"
-		echo "    backup    mirror repository to a remote backup repository"
-		echo "    <all valid git commands>"
-		echo "    custom    run custom shell command"
-		echo ""
-		echo "  options:"
-		echo "    -r        rebuild the prot project list before running the command"
-		echo "    [git options] all options valid to the specified git command"
-		echo ""
-		echo "  project patterns:"
-		echo "    [@<project patterns>] allows to filter project by name"
-		echo "                          only parts of the project name need to be given"
-		echo "                          multiple definitions are possible"
-		echo ""
-		echo "  run 'prot <prot command> --help' to get detailed help for specified command"
-
+	fi
+	
+	if [ "$1" == "" -a $FLAG_HELP -eq 1 ]; then
+		echo "usage: prot [prot options] [--] <prot command> [git options] [@<project pattern>] ..."
+		
+		if [  $FLAG_HELP -eq 1 ]; then
+			echo "       prot --help|-h"
+			echo "       prot --rebuild|-r"
+			echo "       prot --version"
+			echo ""
+			echo "  prot command:"
+			echo "    gui       run git gui in any repo that has a dirty working tree"
+			echo "    gui!      run git gui whether the working tree is dirty or not"
+			echo "    gitk|k    run gitk in every repo"
+			echo "    update    update repos from a given remote"
+			echo "    upload    upload every repo to a given remote"
+			echo "    rebuild   rebuild the prot project list"
+			echo "    help      show this help"
+			echo "    gc        run garbage collector"
+			echo "    backup    mirror repository to a remote backup repository"
+			echo "    <any valid git commands>"
+			echo "              runs the given git command with its arguments"
+			echo "    custom    run custom shell command"
+			echo ""
+			echo "  prot options:"
+			echo "    --help|-h           if specified along with a prot command show detailed help"
+			echo "                        for this command. Show this help screen otherwise"
+			echo "    --dry-run           don't do anything that would hurt"
+			echo "    --rebuild|-r        rebuild the prot project list before running the command"
+			echo "    --version           show version number and exit"
+			echo ""
+			echo "  git options:"
+			echo "    all options valid to the specified git command"
+			echo ""
+			echo "  project patterns:"
+			echo "    [@<project patterns>] allows to filter project by name"
+			echo "                          only parts of the project name need to be given"
+			echo "                          multiple definitions are possible"
+		fi
 	elif [ "$1" == "version" ]; then
 		echo "prot version $PROT_VERSION"
 	
 	elif [ "$1" == "gui" ]; then
 		echo "usage: prot $1 [local branch]"
-		echo ""
-		echo "  local branch:"
-		echo "    If specified and differs from currently checked out branch prot first"
-		echo "    switch to <local branch>, run git gui as normal and then rebase the former"
-		echo "    branch to the new top of <local branch>"
-	
+		
+		if [  $FLAG_HELP -eq 1 ]; then
+			echo ""
+			echo "  local branch:"
+			echo "    If specified and differs from currently checked out branch prot first"
+			echo "    switch to <local branch>, run git gui as normal and then rebase the former"
+			echo "    branch to the new top of <local branch>"
+		fi
 	elif [ "$1" == "update" ]; then
 		echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
 	
 	elif [ "$1" == "upload" ]; then
 		echo "usage: prot $1 <remote> [local branch]"
 		
-	else
-		echo "No detailed help for command '$1' available. Try 'prot help'"
+	elif [ "$1" != "" ]; then
+		echo "No detailed help for command '$1' available. Try 'prot --help'"
+	
+	fi
+	
+	if [ $FLAG_HELP -eq 0 ]; then
+		local cmd=$1
+		if [ "$cmd" != "" ]; then
+			cmd="$cmd "
+		fi
+		
+		echo ""
+		echo "For detailed help run 'prot $cmd--help'"
+
 	fi
 		
 	echo ""
@@ -597,28 +605,67 @@ __prot()
 	__handle_egit_compatibility
 
 
-	# parse options
+	# options
 	OPTIONS=()
+	
+	# defaults
+	FLAG_REBUILD=0
+	FLAG_DRYRUN=0
+	FLAG_VERBOSITY=0
+	FLAG_HELP=0
+	
+	# translate long options
+	local _args=
+	for _opt; do
+		local _delim=""
+		local _sopt
+
+		case "$_opt" in
+			--rebuild)	_sopt="-r" ;;
+			--dry-run)	_sopt="-u" ;;
+			--help)		_sopt="-h" ;;
+			--version)	_sopt="-x" ;;
+			*)	[[ "${_opt:0:1}" == "-" ]] || _delim="\""
+				_sopt="${_delim}${_opt}${_delim}" ;;
+		esac
+		
+		_args="${_args}${_sopt} "
+	done
+	eval set -- $_args
+	
+	# parse options
+	repo_filter=()
 	_opt_end=0
-	read_repo_options=()
 	for _opt in "$@"; do
-		if [ $_opt_end -eq 0 -a "${_opt:0:2}" == "-r" ]; then
-			read_repo_options=("${read_repo_options[@]}" "-f")
+		if [ "${_opt}" == "--" ]; then
+			_opt_end=1
+		elif [ $_opt_end -eq 0 -a "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
+			OPTIND=0
+			while getopts ":ruvhx" flag "$_opt"; do
+				case "$flag" in
+					r) FLAG_REBUILD=1 ;;
+					u) FLAG_DRYRUN=1 ;;
+					v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
+					h) FLAG_HELP=1 ;;
+					x) FLAG_HELP=1 OPTIONS=("${OPTIONS[@]}" "version") ;;
+					:)	echo "Missing argument for $OPTARG"
+						return 1
+						;;
+					?)	echo "Illegal argument: $OPTARG"
+						return 1
+						;;
+				esac
+			done
 		elif [ "${_opt:0:1}" == "@" ]; then
-			read_repo_options=("${read_repo_options[@]}" "${_opt:1}")
+			repo_filter=("${repo_filter[@]}" "${_opt:1}")
 		else
 			OPTIONS=("${OPTIONS[@]}" "$_opt")
-			_opt_end=1
 		fi
 	done
 	
 
-	# intern commands
-	if [ "${OPTIONS[0]}" == "rebuild" ]; then
-		__build_prot_manifest "force"
-		return $?
-	
-	elif [ "${OPTIONS[0]}" == "" -o "${OPTIONS[0]}" == "help" -o "${OPTIONS[0]}" == "version" -o "${OPTIONS[1]}" == "--help" ]; then
+	# help
+	if [ "${OPTIONS[0]}" == "" -o $FLAG_HELP -eq 1 ]; then
 		__usage "${OPTIONS[0]}"
 		
 		if [ "${OPTIONS[0]}" == "" ]; then
@@ -628,8 +675,28 @@ __prot()
 		fi
 	fi
 	
+
+	# update manifest
+	local force=
+	if [ $FLAG_REBUILD -eq 1 ]; then
+		force="force"
+	fi
+
+	__build_prot_manifest $force
+	local _ret=$?
+		
+	if [ $_ret -ne 0 ]; then
+		return $?
+	fi
+		
+	if [ $FLAG_REBUILD -eq 1 -a "${OPTIONS[0]}" == "" ]; then
+		# rebuild only
+		return 0
+	fi
+
 	
-	__read_repo "${read_repo_options[@]}"
+	# read repo
+	__read_repo "${repo_filter[@]}"
 	
 
 	# git commands
