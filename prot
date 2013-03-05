@@ -484,6 +484,12 @@ __exec_git()
 		P_RREV=$(__translate_ref "$P_TRANSTABLE" "$P_RREV")		
 		
 		
+		# export vars
+		export P_PATH
+		export P_LREV
+		export P_RREV
+
+		
 		local branch_info="(\033[0;32m$P_LREV\033[0;37m"
 		if [ "$LOCAL_BRANCH" != "$P_LREV" ]; then
 			branch_info+="[\033[0;32m$LOCAL_BRANCH\033[0;37m]"
