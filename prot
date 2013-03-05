@@ -28,7 +28,7 @@ BASE_PATH=
 PROJECTS=()
 
 
-PROT_VERSION=1.4
+PROT_VERSION=1.4.1
 
 
 __d()
@@ -94,53 +94,21 @@ __build_prot_manifest()
 	fi
 
 
-	if [ \
-		"$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/prot.list" -o \
-		"$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/prot.list" -o \
-		"$1" == "force" \
-		]; then		
-		bo=\(
-		bc=\)
-		t=\`
-		
-		PERL_CODE=$(cat <<PERL_CODE
+	bo=\(
+	bc=\)
+	t=\`
 
-\$file = "";
+	PERL_CODE=$(cat <<PERL_CODE
 
-open${bo}FILE, "<$BASE_PATH/.repo/manifest.xml"$bc or die "Cannot load repo list\n";
-\$file .= \$_ while ( <FILE> );
-close(FILE);
-
-if ( -e "$BASE_PATH/.repo/local_manifest.xml" )
-{
-	open${bo}FILE, "<$BASE_PATH/.repo/local_manifest.xml"$bc or die "Cannot load local repo list\n";
-	\$file .= \$_ while ( <FILE> );
-	close(FILE);
-}
-
-@local_manifests = <$BASE_PATH/.repo/local_manifests/*.xml>;
-foreach \$local_manifest (@local_manifests)
-{
-	open${bo}FILE, "<\$local_manifest"$bc or die "Cannot load local repo list\n";
-	\$file .= \$_ while ( <FILE> );
-	close(FILE);
-}
-
-
-\$file =~ s/<!--.*?-->//gs;
+\$file = ${t}${bo}cd ${BASE_PATH}; repo list${bc}${t};
 
 %projects = ();
 @project_list = ();
 
-while ( \$file =~ /<project$bo[^>]+$bc>/g )
+while ( \$file =~ /$bo.+$bc\s*:\s*$bo.+$bc/gm )
 {
-	\$line = \$1;
-	
-	\$line =~ /name="$bo[^"]*$bc"/i;
-	\$name = \$1;
-	
-	\$line =~ /path="$bo[^"]*$bc"/i;
 	\$path = \$1;
+	\$name = \$2;
 	
 	\$name = \$path if ( \$name eq "" );
 	
@@ -195,16 +163,15 @@ foreach ( @project_list )
 close(FILE);
 
 PERL_CODE
-		)
-	
-		
-		echo -n "### Building manifest "
-		if [ "$1" == "force" ]; then echo -n "(forced)"; else echo -n "(update)"; fi
-		echo " ###"
-	
-		echo $PERL_CODE | perl
-		return $?
-	fi
+	)
+
+
+	echo -n "### Building manifest "
+	if [ "$1" == "force" ]; then echo -n "(forced)"; else echo -n "(update)"; fi
+	echo " ###"
+
+	echo $PERL_CODE | perl
+	return $?
 }	
 
 
