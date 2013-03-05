@@ -731,6 +731,17 @@ __prot()
 			"__git rerere gc" \
 		)
 		
+	elif [ "${OPTIONS[0]}" == "backup" ]; then
+		if [ "${OPTIONS[1]}" == "" ]; then
+			OPTIONS[1]="backup"
+		fi
+		
+		commands=( \
+			"${OPTIONS[0]}" \
+			"!dir:lr" \
+			"__git push --mirror ${OPTIONS[1]}" \
+		)
+		
 	elif [ "${OPTIONS[0]}" == "custom" ]; then
 		local _cmd_name="${OPTIONS[0]}(${OPTIONS[1]})"
 		unset OPTIONS[0]
