@@ -718,6 +718,14 @@ __prot()
 			"__git $GIT_GUI ${OPTIONS[*]} >/dev/null" \
 		)
 		
+	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
+		OPTIONS[0]=$GIT_K
+		
+		commands=( \
+			"${OPTIONS[0]}" \
+			"${OPTIONS[*]} & >/dev/null" \
+		)
+		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
 		if [ "${OPTIONS[1]}" == "" ]; then
 			__usage "${OPTIONS[0]}"
@@ -746,14 +754,6 @@ __prot()
 			"!lb:${OPTIONS[2]}" \
 			"!dir:lr" \
 			"__git push ${OPTIONS[1]} \$P_LREV" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
-		OPTIONS[0]=$GIT_K
-		
-		commands=( \
-			"${OPTIONS[0]}" \
-			"${OPTIONS[*]} & >/dev/null" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gc" ]; then
