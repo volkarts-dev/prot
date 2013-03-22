@@ -625,7 +625,7 @@ __prot()
 			--dry-run)	_sopt="-u" ;;
 			--help)		_sopt="-h" ;;
 			--version)	_sopt="-x" ;;
-			*)	[[ "${_opt:0:1}" == "-" ]] || _delim="\""
+			*)	[[ "${_opt:0:1}" == "-" ]] || _delim="'"
 				_sopt="${_delim}${_opt}${_delim}" ;;
 		esac
 		
