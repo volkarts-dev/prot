@@ -25,6 +25,8 @@ PROJECTS=()
 
 
 PROT_VERSION=1.4.3
+GIT_GUI=cola
+GIT_K=qgit
 
 
 __d()
@@ -340,7 +342,7 @@ __git_gui()
 		fi
 	fi
 	
-	__git gui
+	__git $GIT_GUI
 	ret=$?
 	if [ $ret -ne 0 ]; then
 		return $ret
@@ -705,7 +707,7 @@ __prot()
 			"${OPTIONS[0]}" \
 			"!lb:${OPTIONS[1]}" \
 			'__repo_status' \
-			"__git_gui \$P_LREV" \
+			"__git_gui \$P_LREV >/dev/null" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gui!" ]; then
@@ -713,7 +715,15 @@ __prot()
 		
 		commands=( \
 			"gui!" \
-			"__git gui ${OPTIONS[*]}" \
+			"__git $GIT_GUI ${OPTIONS[*]} >/dev/null" \
+		)
+		
+	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
+		OPTIONS[0]=$GIT_K
+		
+		commands=( \
+			"${OPTIONS[0]}" \
+			"${OPTIONS[*]} & >/dev/null" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "update" ]; then
@@ -744,16 +754,6 @@ __prot()
 			"!lb:${OPTIONS[2]}" \
 			"!dir:lr" \
 			"__git push ${OPTIONS[1]} \$P_LREV" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
-		if [ "${OPTIONS[0]}" == "k" ]; then
-			OPTIONS[0]="gitk"
-		fi
-		
-		commands=( \
-			"${OPTIONS[0]}" \
-			"${OPTIONS[*]} &" \
 		)
 		
 	elif [ "${OPTIONS[0]}" == "gc" ]; then
