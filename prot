@@ -651,8 +651,8 @@ __prot()
 					:)	echo "Missing argument for $OPTARG"
 						return 1
 						;;
-					?)	echo "Illegal argument: $OPTARG"
-						return 1
+
+					?)	OPTIONS=("${OPTIONS[@]}" "$_opt")	# pass it to git
 						;;
 				esac
 			done
