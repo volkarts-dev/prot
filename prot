@@ -328,6 +328,71 @@ __switch_back_branch_temp()
 }
 
 
+__update()
+{
+	local ret
+	local current_branch
+	local temp_name=
+	
+	
+	__repo_status
+	if [ $? -eq 0 ]; then
+		# make temp commit
+		temp_name=prot_update_temp_$$
+		current_branch=`__get_local_branch`
+		__git checkout -b "$temp_name"
+		__git add -A
+		__git commit -m "$temp_name"
+		__git checkout "$current_branch"
+	fi
+	
+	
+	__git fetch $1
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+
+	__switch_branch_temp $P_LREV
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+	
+	__git merge $1/$P_RREV
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+	
+	__switch_back_branch_temp $P_LREV $2
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		return $ret
+	fi
+	
+	
+	if [ "$temp_name" != "" ]; then
+		__git checkout "$temp_name"
+		
+		local cont=
+		while true; do
+			__git rebase "$current_branch" $cont
+			if [ $? -eq 0 ]; then
+				break
+			fi
+			
+			__git gui
+			cont=--continue
+		done
+		
+		__git reset --mixed HEAD^
+		__git checkout "$current_branch"
+		__git branch -d "$temp_name"
+	fi
+}
+
+
 __git_gui()
 {
 	local ret
@@ -737,10 +802,7 @@ __prot()
 			"!rb:${OPTIONS[2]}" \
 			"!lb:${OPTIONS[3]}" \
 			"!dir:rl" \
-			"__git fetch ${OPTIONS[1]}" \
-			"__switch_branch_temp \$P_LREV" \
-			"__git merge ${OPTIONS[1]}/\$P_RREV" \
-			"__switch_back_branch_temp \$P_LREV ${OPTIONS[4]}" \
+			"__update ${OPTIONS[1]} ${OPTIONS[4]}"
 		)
 		
 	elif [ "${OPTIONS[0]}" == "upload" ]; then
