@@ -25,8 +25,8 @@ PROJECTS=()
 
 
 PROT_VERSION=1.4.2
-GIT_GUI=cola
-GIT_K=qgit
+GIT_GUI=gui
+GIT_K=gitk
 
 
 __d()
