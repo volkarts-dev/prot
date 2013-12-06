@@ -337,13 +337,10 @@ __update()
 	
 	__repo_status
 	if [ $? -eq 0 ]; then
-		# make temp commit
+		# repo dirty? stash changes
 		temp_name=prot_update_temp_$$
 		current_branch=`__get_local_branch`
-		__git checkout -b "$temp_name"
-		__git add -A
-		__git commit -m "$temp_name"
-		__git checkout "$current_branch"
+		__git stash save "$temp_name"
 	fi
 	
 	
@@ -373,22 +370,12 @@ __update()
 	
 	
 	if [ "$temp_name" != "" ]; then
-		__git checkout "$temp_name"
-		
-		local cont=
-		while true; do
-			__git rebase "$current_branch" $cont
-			if [ $? -eq 0 ]; then
-				break
-			fi
-			
-			__git gui
-			cont=--continue
-		done
-		
-		__git reset --mixed HEAD^
-		__git checkout "$current_branch"
-		__git branch -d "$temp_name"
+		__git stash pop
+		ret=$?
+		if [ $ret -ne 0 ]; then
+			echo "stash pop failed with conflicts. Solve it and run 'prot @$P_NAME stash drop" 1>&2
+			return $ret
+		fi
 	fi
 }
 
