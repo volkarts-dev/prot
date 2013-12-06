@@ -218,7 +218,7 @@ __failed()
 {
 	__last_git_failed=1
 	
-	echo -e "\033[1;31mFailed\033[0m"
+	echo -e "\033[1;31mFailed\033[0m" 1>&2
 }
 
 
@@ -455,7 +455,7 @@ __exec_git()
 
 		cd $BASE_PATH/$P_PATH 2>/dev/null
 		if [ $? -ne 0 ]; then
-			echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m"
+			echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m" 1>&2
 			__failed
 			break;
 		fi
@@ -560,9 +560,9 @@ __usage()
 	if [ $FLAG_HELP -eq 0 ]; then
 		# error 
 		if [ "$1" == "" ]; then
-			echo "ERROR: No command specified"
+			echo "ERROR: No command specified" 1>&2
 		else
-			echo "ERROR: Missing options for command"
+			echo "ERROR: Missing options for command" 1>&2
 		fi
 		echo ""
 	fi
@@ -650,7 +650,7 @@ __prot()
 	__set_base
 	
 	if [ $? -ne 0 ]; then
-		echo "Not running within a repo root directory"
+		echo "Not running within a repo root directory" 1>&2
 		return 1
 	fi
 
@@ -702,7 +702,7 @@ __prot()
 					v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
 					h) FLAG_HELP=1 ;;
 					x) FLAG_HELP=1 OPTIONS=("${OPTIONS[@]}" "version") ;;
-					:)	echo "Missing argument for $OPTARG"
+					:)	echo "Missing argument for $OPTARG" 1>&2
 						return 1
 						;;
 
