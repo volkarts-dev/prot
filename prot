@@ -25,8 +25,8 @@ PROJECTS=()
 
 
 PROT_VERSION=1.4.4
-GIT_GUI=gui
-GIT_K=gitk
+GIT_GUI=${GIT_GUI:-gui}
+GIT_K=${GIT_K:-gitk}
 
 
 __d()
