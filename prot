@@ -31,72 +31,72 @@ GIT_K=gitk
 
 __d()
 {
-	[ $FLAG_VERBOSITY -ge 3 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
+    [ $FLAG_VERBOSITY -ge 3 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
 }
 
 
 __set_base()
 {
-	BASE_PATH=$PWD
-	
-	while [ "$BASE_PATH" != "" -a "$BASE_PATH" != "/" ]; do
-		if [ -d	 "$BASE_PATH/.repo" ]; then
-			return 0
-		fi
-		
-		BASE_PATH=`dirname "$BASE_PATH"`
-	done
-	
-	return 1
+    BASE_PATH=$PWD
+
+    while [ "$BASE_PATH" != "" -a "$BASE_PATH" != "/" ]; do
+        if [ -d	 "$BASE_PATH/.repo" ]; then
+            return 0
+        fi
+
+        BASE_PATH=`dirname "$BASE_PATH"`
+    done
+
+    return 1
 }
 
 
 __handle_egit_compatibility()
 {
-	if [ -f "$BASE_PATH/.repo/egit_project.list" ]; then
-		mv "$BASE_PATH/.repo/egit_project.list" "$BASE_PATH/.repo/prot.list"
-	fi
+    if [ -f "$BASE_PATH/.repo/egit_project.list" ]; then
+        mv "$BASE_PATH/.repo/egit_project.list" "$BASE_PATH/.repo/prot.list"
+    fi
 }
 
 
 __build_prot_manifest()
 {
-	if [ ! -f "$BASE_PATH/.repo/manifest.xml" ]; then
-		# no android environment - skip building manifest
-		return;
-	fi
-
-	
-	local doit
-
-	if [ "$1" != "force" ]; then
-		doit=0
-		if [ "$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
-			doit=1
-		else
-			if [ "$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
-				doit=1
-			else
-				for f in `ls $BASE_PATH/.repo/local_manifests/*.xml 2>/dev/null`; do
-					if [ "$f" -nt "$BASE_PATH/.repo/prot.list" ]; then
-						doit=1
-						break;
-					fi
-				done
-			fi
-		fi
-
-		if [ $doit -eq 0 ]; then
-			return;
-		fi
-	fi
+    if [ ! -f "$BASE_PATH/.repo/manifest.xml" ]; then
+        # no android environment - skip building manifest
+        return;
+    fi
 
 
-	bo=\(
-	bc=\)
-	t=\`
+    local doit
 
-	PERL_CODE=$(cat <<PERL_CODE
+    if [ "$1" != "force" ]; then
+        doit=0
+        if [ "$BASE_PATH/.repo/manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
+            doit=1
+        else
+            if [ "$BASE_PATH/.repo/local_manifest.xml" -nt "$BASE_PATH/.repo/prot.list" ]; then
+                doit=1
+            else
+                for f in `ls $BASE_PATH/.repo/local_manifests/*.xml 2>/dev/null`; do
+                    if [ "$f" -nt "$BASE_PATH/.repo/prot.list" ]; then
+                        doit=1
+                        break;
+                    fi
+                done
+            fi
+        fi
+
+        if [ $doit -eq 0 ]; then
+            return;
+        fi
+    fi
+
+
+    bo=\(
+    bc=\)
+    t=\`
+
+    PERL_CODE=$(cat <<PERL_CODE
 
 \$file = ${t}${bo}cd ${BASE_PATH}; repo list${bc}${t};
 
@@ -105,799 +105,799 @@ __build_prot_manifest()
 
 while ( \$file =~ /$bo.+$bc\s*:\s*$bo.+$bc/gm )
 {
-	\$path = \$1;
-	\$name = \$2;
-	
-	\$name = \$path if ( \$name eq "" );
-	
-	\$pid = "\$name:\$path";
-	
-	if ( !\$projects{\$path} )
-	{
-		push @project_list, \$path;
-	}
-	\$projects{\$path} = \$pid;
-	
+    \$path = \$1;
+    \$name = \$2;
+
+    \$name = \$path if ( \$name eq "" );
+
+    \$pid = "\$name:\$path";
+
+    if ( !\$projects{\$path} )
+    {
+        push @project_list, \$path;
+    }
+    \$projects{\$path} = \$pid;
+
 }
 
-	
-	
+
+
 if ( -e "$BASE_PATH/.repo/prot.list" )
 {
-	open${bo}FILE, "<$BASE_PATH/.repo/prot.list"$bc or die "Cannot load prot project list\n";
-	while ( <FILE> )
-	{
-		\$_ =~ s/[\s\r\n]+\$/\1/s;
-		@pdef = split /:/;
-		
-		if ( \$projects{\$pdef[1]} )
-		{
-			if ( \$pdef[0] =~ /^#/ )
-			{
-				\$projects{\$pdef[1]} = "#\$projects{\$pdef[1]}"
-			}
-			
-			if ( \$pdef[2] )
-			{
-				\$projects{\$pdef[1]} = "\$projects{\$pdef[1]}:\$pdef[2]";
-			}
-		}
-	}
-	close(FILE);
+    open${bo}FILE, "<$BASE_PATH/.repo/prot.list"$bc or die "Cannot load prot project list\n";
+    while ( <FILE> )
+    {
+        \$_ =~ s/[\s\r\n]+\$/\1/s;
+        @pdef = split /:/;
+
+        if ( \$projects{\$pdef[1]} )
+        {
+            if ( \$pdef[0] =~ /^#/ )
+            {
+                \$projects{\$pdef[1]} = "#\$projects{\$pdef[1]}"
+            }
+
+            if ( \$pdef[2] )
+            {
+                \$projects{\$pdef[1]} = "\$projects{\$pdef[1]}:\$pdef[2]";
+            }
+        }
+    }
+    close(FILE);
 }
 
 
 open${bo}FILE, ">$BASE_PATH/.repo/prot.list"$bc or die "Cannot write prot project list\n";
 foreach ( @project_list )
 {
-	\$status = ${t}cd $BASE_PATH/\$_ && git branch | awk '/^\*/ { print \\\$1 \\\$2 \\\$3 }'$t;
-	\$status =~ s/[\s\r\n]+\$/\1/s;
-	
-	if ( \$status !~ /^\*\(/ )
-	{
-		print FILE "\$projects{\$_}\n";
-	}
+    \$status = ${t}cd $BASE_PATH/\$_ && git branch | awk '/^\*/ { print \\\$1 \\\$2 \\\$3 }'$t;
+    \$status =~ s/[\s\r\n]+\$/\1/s;
+
+    if ( \$status !~ /^\*\(/ )
+    {
+        print FILE "\$projects{\$_}\n";
+    }
 }
 close(FILE);
 
 PERL_CODE
-	)
+    )
 
 
-	echo -n "### Building manifest "
-	if [ "$1" == "force" ]; then echo -n "(forced)"; else echo -n "(update)"; fi
-	echo " ###"
+    echo -n "### Building manifest "
+    if [ "$1" == "force" ]; then echo -n "(forced)"; else echo -n "(update)"; fi
+    echo " ###"
 
-	echo $PERL_CODE | perl
-	return $?
+    echo $PERL_CODE | perl
+    return $?
 }	
 
 
 __filter_projects()
 {
-	if [ $# -eq 0 ]; then
-		return
-	fi
-	
-	
-	declare -a _projects=("${PROJECTS[@]}")
+    if [ $# -eq 0 ]; then
+        return
+    fi
 
-	PROJECTS=()
-	
-	for _project in "${_projects[@]}"; do
-		for _arg in "$@"; do
-			__d "Check $_project against $_arg"
-			
-			if echo $_project | grep -i $_arg > /dev/null; then
-				PROJECTS=("${PROJECTS[@]}" "$_project")
-			fi
-		done
-	done
+
+    declare -a _projects=("${PROJECTS[@]}")
+
+    PROJECTS=()
+
+    for _project in "${_projects[@]}"; do
+        for _arg in "$@"; do
+            __d "Check $_project against $_arg"
+
+            if echo $_project | grep -i $_arg > /dev/null; then
+                PROJECTS=("${PROJECTS[@]}" "$_project")
+            fi
+        done
+    done
 }
 
 
 __git()
 {
-	if [ $FLAG_VERBOSITY -ge 1 ]; then
-		echo -e "\e[1;30mgit $@\e[0m" 1>&2
-	fi
-	
-	git "$@"
+    if [ $FLAG_VERBOSITY -ge 1 ]; then
+        echo -e "\e[1;30mgit $@\e[0m" 1>&2
+    fi
+
+    git "$@"
 }
 
 
 __read_repo()
 {
-	PROJECTS=($(cat $BASE_PATH/.repo/prot.list | grep "^[^#]"))
-	
-	__filter_projects "$@"
+    PROJECTS=($(cat $BASE_PATH/.repo/prot.list | grep "^[^#]"))
+
+    __filter_projects "$@"
 }
 
 
 __failed()
 {
-	__last_git_failed=1
-	
-	echo -e "\033[1;31mFailed\033[0m"
+    __last_git_failed=1
+
+    echo -e "\033[1;31mFailed\033[0m"
 }
 
 
 # return <skip> when working dir contains no changes
 __repo_status()
 {
-	local status=$(__git status -s)
+    local status=$(__git status -s)
 
-	if [ "$status" != "" ]; then
-		return 0
-	else
-		return 255
-	fi
+    if [ "$status" != "" ]; then
+        return 0
+    else
+        return 255
+    fi
 }
 
 
 __exit_hook()
 {
-	cd $ORIG_PATH
-	
-	exit 3
+    cd $ORIG_PATH
+
+    exit 3
 }
 
 
 __translate_ref()
 {
-	local mappings=($(echo $1 | tr "," "\n"))	
-	for m in "${mappings[@]}"; do
-		_a=($(echo $m | tr "=" "\n"))
-		
-		if [ "${_a[0]}" == "$2" ]; then
-			echo "${_a[1]}"
-			return 0
-		fi
-	done
-	
-	echo "$2"
-	return 0
+    local mappings=($(echo $1 | tr "," "\n"))
+    for m in "${mappings[@]}"; do
+        _a=($(echo $m | tr "=" "\n"))
+
+        if [ "${_a[0]}" == "$2" ]; then
+            echo "${_a[1]}"
+            return 0
+        fi
+    done
+
+    echo "$2"
+    return 0
 }
 
 
 __get_local_branch()
 {
-	echo $(__git branch | awk '/^\*/ { print $2 }')
+    echo $(__git branch | awk '/^\*/ { print $2 }')
 }
 
 
 __switch_branch_temp()
 {
-	if [ "$LOCAL_BRANCH" == "$1" ]; then
-		return 0
-	fi
-	
-	
-	__repo_status
-	if [ $? -eq 0 ]; then
-		echo "Working directory dirty. Commit your changes first."
-		return 1
-	fi
-	
-	
-	echo "Switching to branch $1 for update"
-	
-	__git checkout "$1"
-	if [ $? -ne 0 ]; then
-		return $?
-	fi
-	
-	
-	return 0
+    if [ "$LOCAL_BRANCH" == "$1" ]; then
+        return 0
+    fi
+
+
+    __repo_status
+    if [ $? -eq 0 ]; then
+        echo "Working directory dirty. Commit your changes first."
+        return 1
+    fi
+
+
+    echo "Switching to branch $1 for update"
+
+    __git checkout "$1"
+    if [ $? -ne 0 ]; then
+        return $?
+    fi
+
+
+    return 0
 }
 
 
 __switch_back_branch_temp()
 {
-	local ret
-	
-	if [ "$LOCAL_BRANCH" == "$1" ]; then
-		return 0
-	fi
-	
-	
-	echo -n "Switching back to branch $LOCAL_BRANCH"
-	if [ "$2" == "--rebase" ]; then
-		echo " and rebase to $1"
-	else
-		echo ""
-	fi
-	
-	__git checkout "$LOCAL_BRANCH"
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
-	
-	
-	if [ "$2" == "--rebase" ]; then
-		__git rebase "$1"
-		ret=$?
-		if [ $ret -ne 0 ]; then
-			return $ret
-		fi
-	fi
-	
-	
-	return 0
+    local ret
+
+    if [ "$LOCAL_BRANCH" == "$1" ]; then
+        return 0
+    fi
+
+
+    echo -n "Switching back to branch $LOCAL_BRANCH"
+    if [ "$2" == "--rebase" ]; then
+        echo " and rebase to $1"
+    else
+        echo ""
+    fi
+
+    __git checkout "$LOCAL_BRANCH"
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+
+    if [ "$2" == "--rebase" ]; then
+        __git rebase "$1"
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            return $ret
+        fi
+    fi
+
+
+    return 0
 }
 
 
 __update()
 {
-	local ret
-	local current_branch
-	local temp_name=
-	local remote
+    local ret
+    local current_branch
+    local temp_name=
+    local remote
 
 
-	remote=`__git remote | grep "$1"`
-	if [ "$remote" != "$1" ]; then
-		# this repository doesn't have this remote. Skip it.
-		echo "No such remote $1. Skip update."
-		return 255
-	fi
+    remote=`__git remote | grep "$1"`
+    if [ "$remote" != "$1" ]; then
+        # this repository doesn't have this remote. Skip it.
+        echo "No such remote $1. Skip update."
+        return 255
+    fi
 
-	__repo_status
-	if [ $? -eq 0 ]; then
-		# make temp commit
-		temp_name=prot_update_temp_$$
-		current_branch=`__get_local_branch`
-		__git checkout -b "$temp_name"
-		__git add -A
-		__git commit -m "$temp_name"
-		__git checkout "$current_branch"
-	fi
-	
-	
-	__git fetch $1
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
+    __repo_status
+    if [ $? -eq 0 ]; then
+        # make temp commit
+        temp_name=prot_update_temp_$$
+        current_branch=`__get_local_branch`
+        __git checkout -b "$temp_name"
+        __git add -A
+        __git commit -m "$temp_name"
+        __git checkout "$current_branch"
+    fi
 
-	__switch_branch_temp $P_LREV
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
-	
-	__git merge $1/$P_RREV
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
-	
-	__switch_back_branch_temp $P_LREV $2
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
-	
-	
-	if [ "$temp_name" != "" ]; then
-		__git checkout "$temp_name"
-		
-		local cont=
-		while true; do
-			__git rebase "$current_branch" $cont
-			if [ $? -eq 0 ]; then
-				break
-			fi
-			
-			__git gui
-			cont=--continue
-		done
-		
-		__git reset --mixed HEAD^
-		__git checkout "$current_branch"
-		__git branch -d "$temp_name"
-	fi
+
+    __git fetch $1
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    __switch_branch_temp $P_LREV
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    __git merge $1/$P_RREV
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    __switch_back_branch_temp $P_LREV $2
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+
+    if [ "$temp_name" != "" ]; then
+        __git checkout "$temp_name"
+
+        local cont=
+        while true; do
+            __git rebase "$current_branch" $cont
+            if [ $? -eq 0 ]; then
+                break
+            fi
+
+            __git gui
+            cont=--continue
+        done
+
+        __git reset --mixed HEAD^
+        __git checkout "$current_branch"
+        __git branch -d "$temp_name"
+    fi
 }
 
 
 __upload()
 {
-	local ret
+    local ret
 
 
-	remote=`__git remote | grep "$1"`
-	if [ "$remote" != "$1" ]; then
-		# this repository doesn't have this remote. Skip it.
-		echo "No such remote $1. Skip upload."
-		return 255
-	fi
+    remote=`__git remote | grep "$1"`
+    if [ "$remote" != "$1" ]; then
+        # this repository doesn't have this remote. Skip it.
+        echo "No such remote $1. Skip upload."
+        return 255
+    fi
 
-	__switch_branch_temp $P_LREV
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
+    __switch_branch_temp $P_LREV
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
 
-	__git push $1 $P_LREV:$P_RREV
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
+    __git push $1 $P_LREV:$P_RREV
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
 
-	__switch_back_branch_temp $P_LREV $2
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
+    __switch_back_branch_temp $P_LREV $2
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
 }
 
 
 __git_gui()
 {
-	local ret
+    local ret
 
-	echo "Working directory is dirty. Starting git gui ..."
+    echo "Working directory is dirty. Starting git gui ..."
 
-	if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
-		__git checkout "$1"
-		ret=$?
-		if [ $ret -ne 0 ]; then
-			return $ret
-		fi
-	fi
-	
-	__git $GIT_GUI
-	ret=$?
-	if [ $ret -ne 0 ]; then
-		return $ret
-	fi
-	
-	if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
-		__git rebase "$1" "$LOCAL_BRANCH"
-		ret=$?
-		if [ $ret -ne 0 ]; then
-			return $ret
-		fi
-	fi
+    if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+        __git checkout "$1"
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            return $ret
+        fi
+    fi
 
-	return 0
+    __git $GIT_GUI
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+        __git rebase "$1" "$LOCAL_BRANCH"
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            return $ret
+        fi
+    fi
+
+    return 0
 }
 
 
 __exec_git()
 {
-	ORIG_PATH=$PWD
-	
-	trap __exit_hook INT TERM
+    ORIG_PATH=$PWD
 
-	
-	local __last_git_failed=0
+    trap __exit_hook INT TERM
 
-	
-	local _cmd_info=$(echo $1 | tr '[a-z]' '[A-Z]')
-	shift
-	
-	P_RREV_U=
-	P_LREV_U=
-	DIR=lo
-	while [ 1 = 1 ]; do
-		internal_cmd=$1
-		if [ "${internal_cmd:0:4}" == "!rb:" ]; then
-			P_RREV_U=${internal_cmd:4}
-			shift
-		elif [ "${internal_cmd:0:4}" == "!lb:" ]; then
-			P_LREV_U=${internal_cmd:4}
-			shift
-		elif [ "${internal_cmd:0:5}" == "!dir:" ]; then
-			DIR=${internal_cmd:5}
-			shift
-		else
-			break
-		fi
-	done
-	
-	
-	for p in ${PROJECTS[@]}; do
-		P_ATTRS=($(echo $p | tr ":" "\n"))
-		
-		P_NAME=${P_ATTRS[0]}
-		P_PATH=${P_ATTRS[1]}
-		P_TRANSTABLE=${P_ATTRS[2]}
-		
 
-		cd $BASE_PATH/$P_PATH 2>/dev/null
-		if [ $? -ne 0 ]; then
-			echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m"
-			__failed
-			break;
-		fi
-		
-		
-		LOCAL_BRANCH=$(__get_local_branch)
-		
-		
-		P_LREV=$P_LREV_U
-		if [ "$P_LREV" == "" ]; then
-			P_LREV=$LOCAL_BRANCH
-		fi
+    local __last_git_failed=0
 
-		P_LREV=$(__translate_ref "$P_TRANSTABLE" "$P_LREV")
 
-		
-		P_RREV=$P_RREV_U
-		
-		if [ "$P_RREV" == "" ]; then
-			P_RREV=$P_LREV
-		fi
-	
-		P_RREV=$(__translate_ref "$P_TRANSTABLE" "$P_RREV")		
-		
-		
-		# export vars
-		export P_PATH
-		export P_LREV
-		export P_RREV
+    local _cmd_info=$(echo $1 | tr '[a-z]' '[A-Z]')
+    shift
 
-		
-		local branch_info="(\033[0;32m$P_LREV\033[0;37m"
-		if [ "$LOCAL_BRANCH" != "$P_LREV" ]; then
-			branch_info+="[\033[0;32m$LOCAL_BRANCH\033[0;37m]"
-		fi
-		if [ "$DIR" != "lo" ]; then
-			if [ "$DIR" == "lr" ]; then
-				branch_info+=" -> "
-			elif [ "$DIR" == "rl" ]; then
-				branch_info+=" <- "
-			else
-				branch_info+=" <-> "
-			fi
-			branch_info+="\033[0;31m$P_RREV\033[0;37m"
-		fi
-		branch_info+=")"
-		
-		echo -e "### $_cmd_info: \033[1;37m${P_NAME}\033[0;37m $branch_info ###"
-		
-		
-		eval "__d \"Working in $PWD\""
-		
-		
-		for cmd in "$@"; do
-			if [ $FLAG_DRYRUN -ne 1 ]; then
-				if [ $FLAG_VERBOSITY -ge 1 ]; then
-					eval "echo -e \"\e[1;30m(MAIN CMD): $cmd\e[0m\""
-				else
-					eval "__d \"Run cmd: $cmd\""
-				fi
-			
-				eval $cmd
-				exit_code=$?
-			else
-				eval "echo -e \"\e[0;36m(DRY RUN): $cmd\e[0m\""
+    P_RREV_U=
+    P_LREV_U=
+    DIR=lo
+    while [ 1 = 1 ]; do
+        internal_cmd=$1
+        if [ "${internal_cmd:0:4}" == "!rb:" ]; then
+            P_RREV_U=${internal_cmd:4}
+            shift
+        elif [ "${internal_cmd:0:4}" == "!lb:" ]; then
+            P_LREV_U=${internal_cmd:4}
+            shift
+        elif [ "${internal_cmd:0:5}" == "!dir:" ]; then
+            DIR=${internal_cmd:5}
+            shift
+        else
+            break
+        fi
+    done
 
-				exit_code=0
-			fi
-			
-			__d "Returned with: $exit_code" 
-			
-			if [ $exit_code -eq 255 ]; then
-				break	# not an error. just skip the subsequent commands
-			elif [ $exit_code -eq 254 ]; then
-				return 0	# not an error. User whats to exit
-			elif [ $exit_code -ne 0 ]; then
-				__failed
-				break;
-			fi
-		done
-		
-		if [ $__last_git_failed -ne 0 ]; then
-			break
-		fi
-	done
-			
 
-	cd $ORIG_PATH
-	
-	
-	trap - INT TERM
-	
-	
-	if [ $__last_git_failed -ne 0 ]; then
-		return 2
-	fi
+    for p in ${PROJECTS[@]}; do
+        P_ATTRS=($(echo $p | tr ":" "\n"))
+
+        P_NAME=${P_ATTRS[0]}
+        P_PATH=${P_ATTRS[1]}
+        P_TRANSTABLE=${P_ATTRS[2]}
+
+
+        cd $BASE_PATH/$P_PATH 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m"
+            __failed
+            break;
+        fi
+
+
+        LOCAL_BRANCH=$(__get_local_branch)
+
+
+        P_LREV=$P_LREV_U
+        if [ "$P_LREV" == "" ]; then
+            P_LREV=$LOCAL_BRANCH
+        fi
+
+        P_LREV=$(__translate_ref "$P_TRANSTABLE" "$P_LREV")
+
+
+        P_RREV=$P_RREV_U
+
+        if [ "$P_RREV" == "" ]; then
+            P_RREV=$P_LREV
+        fi
+
+        P_RREV=$(__translate_ref "$P_TRANSTABLE" "$P_RREV")
+
+
+        # export vars
+        export P_PATH
+        export P_LREV
+        export P_RREV
+
+
+        local branch_info="(\033[0;32m$P_LREV\033[0;37m"
+        if [ "$LOCAL_BRANCH" != "$P_LREV" ]; then
+            branch_info+="[\033[0;32m$LOCAL_BRANCH\033[0;37m]"
+        fi
+        if [ "$DIR" != "lo" ]; then
+            if [ "$DIR" == "lr" ]; then
+                branch_info+=" -> "
+            elif [ "$DIR" == "rl" ]; then
+                branch_info+=" <- "
+            else
+                branch_info+=" <-> "
+            fi
+            branch_info+="\033[0;31m$P_RREV\033[0;37m"
+        fi
+        branch_info+=")"
+
+        echo -e "### $_cmd_info: \033[1;37m${P_NAME}\033[0;37m $branch_info ###"
+
+
+        eval "__d \"Working in $PWD\""
+
+
+        for cmd in "$@"; do
+            if [ $FLAG_DRYRUN -ne 1 ]; then
+                if [ $FLAG_VERBOSITY -ge 1 ]; then
+                    eval "echo -e \"\e[1;30m(MAIN CMD): $cmd\e[0m\""
+                else
+                    eval "__d \"Run cmd: $cmd\""
+                fi
+
+                eval $cmd
+                exit_code=$?
+            else
+                eval "echo -e \"\e[0;36m(DRY RUN): $cmd\e[0m\""
+
+                exit_code=0
+            fi
+
+            __d "Returned with: $exit_code"
+
+            if [ $exit_code -eq 255 ]; then
+                break	# not an error. just skip the subsequent commands
+            elif [ $exit_code -eq 254 ]; then
+                return 0	# not an error. User whats to exit
+            elif [ $exit_code -ne 0 ]; then
+                __failed
+                break;
+            fi
+        done
+
+        if [ $__last_git_failed -ne 0 ]; then
+            break
+        fi
+    done
+
+
+    cd $ORIG_PATH
+
+
+    trap - INT TERM
+
+
+    if [ $__last_git_failed -ne 0 ]; then
+        return 2
+    fi
 }
 
 
 __usage()
 {
-	if [ $FLAG_HELP -eq 0 ]; then
-		# error 
-		if [ "$1" == "" ]; then
-			echo "ERROR: No command specified"
-		else
-			echo "ERROR: Missing options for command"
-		fi
-		echo ""
-	fi
-	
-	if [ "$1" == "" -a $FLAG_HELP -eq 1 ]; then
-		echo "usage: prot [prot options] [--] <prot command> [git options] [@<project pattern>] ..."
-		
-		if [  $FLAG_HELP -eq 1 ]; then
-			echo "       prot --help|-h"
-			echo "       prot --rebuild|-r"
-			echo "       prot --version"
-			echo ""
-			echo "  prot command:"
-			echo "    gui       run git gui in any repo that has a dirty working tree"
-			echo "    gui!      run git gui whether the working tree is dirty or not"
-			echo "    gitk|k    run gitk in every repo"
-			echo "    update    update repos from a given remote"
-			echo "    upload    upload every repo to a given remote"
-			echo "    rebuild   rebuild the prot project list"
-			echo "    help      show this help"
-			echo "    gc        run garbage collector"
-			echo "    backup    mirror repository to a remote backup repository"
-			echo "    <any valid git commands>"
-			echo "              runs the given git command with its arguments"
-			echo "    custom    run custom shell command"
-			echo ""
-			echo "  prot options:"
-			echo "    --help|-h           if specified along with a prot command show detailed help"
-			echo "                        for this command. Show this help screen otherwise"
-			echo "    --dry-run           don't do anything that would hurt"
-			echo "    --rebuild|-r        rebuild the prot project list before running the command"
-			echo "    --version           show version number and exit"
-			echo ""
-			echo "  git options:"
-			echo "    all options valid to the specified git command"
-			echo ""
-			echo "  project patterns:"
-			echo "    [@<project patterns>] allows to filter project by name"
-			echo "                          only parts of the project name need to be given"
-			echo "                          multiple definitions are possible"
-		fi
-	elif [ "$1" == "version" ]; then
-		echo "prot version $PROT_VERSION"
-	
-	elif [ "$1" == "gui" ]; then
-		echo "usage: prot $1 [local branch]"
-		
-		if [  $FLAG_HELP -eq 1 ]; then
-			echo ""
-			echo "  local branch:"
-			echo "    If specified and differs from currently checked out branch prot first"
-			echo "    switch to <local branch>, run git gui as normal and then rebase the former"
-			echo "    branch to the new top of <local branch>"
-		fi
-	elif [ "$1" == "update" ]; then
-		echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
-	
-	elif [ "$1" == "upload" ]; then
-		echo "usage: prot $1 <remote> [local branch [remove branch]]"
-		
-	elif [ "$1" != "" ]; then
-		echo "No detailed help for command '$1' available. Try 'prot --help'"
-	
-	fi
-	
-	if [ $FLAG_HELP -eq 0 ]; then
-		local cmd=$1
-		if [ "$cmd" != "" ]; then
-			cmd="$cmd "
-		fi
-		
-		echo ""
-		echo "For detailed help run 'prot $cmd--help'"
+    if [ $FLAG_HELP -eq 0 ]; then
+        # error
+        if [ "$1" == "" ]; then
+            echo "ERROR: No command specified"
+        else
+            echo "ERROR: Missing options for command"
+        fi
+        echo ""
+    fi
 
-	fi
-		
-	echo ""
-	echo "Copyright 2012-2013 Daniel Volk <mail@volkarts.com>"
-	echo ""
+    if [ "$1" == "" -a $FLAG_HELP -eq 1 ]; then
+        echo "usage: prot [prot options] [--] <prot command> [git options] [@<project pattern>] ..."
+
+        if [  $FLAG_HELP -eq 1 ]; then
+            echo "       prot --help|-h"
+            echo "       prot --rebuild|-r"
+            echo "       prot --version"
+            echo ""
+            echo "  prot command:"
+            echo "    gui       run git gui in any repo that has a dirty working tree"
+            echo "    gui!      run git gui whether the working tree is dirty or not"
+            echo "    gitk|k    run gitk in every repo"
+            echo "    update    update repos from a given remote"
+            echo "    upload    upload every repo to a given remote"
+            echo "    rebuild   rebuild the prot project list"
+            echo "    help      show this help"
+            echo "    gc        run garbage collector"
+            echo "    backup    mirror repository to a remote backup repository"
+            echo "    <any valid git commands>"
+            echo "              runs the given git command with its arguments"
+            echo "    custom    run custom shell command"
+            echo ""
+            echo "  prot options:"
+            echo "    --help|-h           if specified along with a prot command show detailed help"
+            echo "                        for this command. Show this help screen otherwise"
+            echo "    --dry-run           don't do anything that would hurt"
+            echo "    --rebuild|-r        rebuild the prot project list before running the command"
+            echo "    --version           show version number and exit"
+            echo ""
+            echo "  git options:"
+            echo "    all options valid to the specified git command"
+            echo ""
+            echo "  project patterns:"
+            echo "    [@<project patterns>] allows to filter project by name"
+            echo "                          only parts of the project name need to be given"
+            echo "                          multiple definitions are possible"
+        fi
+    elif [ "$1" == "version" ]; then
+        echo "prot version $PROT_VERSION"
+
+    elif [ "$1" == "gui" ]; then
+        echo "usage: prot $1 [local branch]"
+
+        if [  $FLAG_HELP -eq 1 ]; then
+            echo ""
+            echo "  local branch:"
+            echo "    If specified and differs from currently checked out branch prot first"
+            echo "    switch to <local branch>, run git gui as normal and then rebase the former"
+            echo "    branch to the new top of <local branch>"
+        fi
+    elif [ "$1" == "update" ]; then
+        echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
+
+    elif [ "$1" == "upload" ]; then
+        echo "usage: prot $1 <remote> [local branch [remove branch]]"
+
+    elif [ "$1" != "" ]; then
+        echo "No detailed help for command '$1' available. Try 'prot --help'"
+
+    fi
+
+    if [ $FLAG_HELP -eq 0 ]; then
+        local cmd=$1
+        if [ "$cmd" != "" ]; then
+            cmd="$cmd "
+        fi
+
+        echo ""
+        echo "For detailed help run 'prot $cmd--help'"
+
+    fi
+
+    echo ""
+    echo "Copyright 2012-2013 Daniel Volk <mail@volkarts.com>"
+    echo ""
 }
 
 
 __prot()
 {
-	__set_base
-	
-	if [ $? -ne 0 ]; then
-		echo "Not running within a repo root directory"
-		return 1
-	fi
+    __set_base
+
+    if [ $? -ne 0 ]; then
+        echo "Not running within a repo root directory"
+        return 1
+    fi
 
 
-	# compat
-	__handle_egit_compatibility
+    # compat
+    __handle_egit_compatibility
 
 
-	# options
-	OPTIONS=()
-	
-	# defaults
-	FLAG_REBUILD=0
-	FLAG_DRYRUN=0
-	FLAG_VERBOSITY=0
-	FLAG_HELP=0
-	
-	# translate long options
-	local _args=
-	for _opt; do
-		local _delim=""
-		local _sopt
+    # options
+    OPTIONS=()
 
-		case "$_opt" in
-			--rebuild)	_sopt="-r" ;;
-			--dry-run)	_sopt="-u" ;;
-			--help)		_sopt="-h" ;;
-			--version)	_sopt="-x" ;;
-			*)	[[ "${_opt:0:1}" == "-" ]] || _delim="'"
-				_sopt="${_delim}${_opt}${_delim}" ;;
-		esac
-		
-		_args="${_args}${_sopt} "
-	done
-	eval set -- $_args
-	
-	# parse options
-	repo_filter=()
-	_opt_end=0
-	for _opt in "$@"; do
-		if [ "${_opt}" == "--" ]; then
-			_opt_end=1
-		elif [ $_opt_end -eq 0 -a "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
-			OPTIND=0
-			while getopts ":ruvhx" flag "$_opt"; do
-				case "$flag" in
-					r) FLAG_REBUILD=1 ;;
-					u) FLAG_DRYRUN=1 ;;
-					v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
-					h) FLAG_HELP=1 ;;
-					x) FLAG_HELP=1 OPTIONS=("${OPTIONS[@]}" "version") ;;
-					:)	echo "Missing argument for $OPTARG"
-						return 1
-						;;
+    # defaults
+    FLAG_REBUILD=0
+    FLAG_DRYRUN=0
+    FLAG_VERBOSITY=0
+    FLAG_HELP=0
 
-					?)	OPTIONS=("${OPTIONS[@]}" "$_opt")	# pass it to git
-						;;
-				esac
-			done
-		elif [ "${_opt:0:1}" == "@" ]; then
-			repo_filter=("${repo_filter[@]}" "${_opt:1}")
-		else
-			OPTIONS=("${OPTIONS[@]}" "$_opt")
-		fi
-	done
-	
+    # translate long options
+    local _args=
+    for _opt; do
+        local _delim=""
+        local _sopt
 
-	# help
-	if [ "${OPTIONS[0]}" == "" -o $FLAG_HELP -eq 1 ]; then
-		__usage "${OPTIONS[0]}"
-		
-		if [ "${OPTIONS[0]}" == "" ]; then
-			return 1
-		else
-			return 0
-		fi
-	fi
-	
+        case "$_opt" in
+            --rebuild)	_sopt="-r" ;;
+            --dry-run)	_sopt="-u" ;;
+            --help)		_sopt="-h" ;;
+            --version)	_sopt="-x" ;;
+            *)	[[ "${_opt:0:1}" == "-" ]] || _delim="'"
+                _sopt="${_delim}${_opt}${_delim}" ;;
+        esac
 
-	# update manifest
-	local force=
-	if [ $FLAG_REBUILD -eq 1 ]; then
-		force="force"
-	fi
+        _args="${_args}${_sopt} "
+    done
+    eval set -- $_args
 
-	__build_prot_manifest $force
-	local _ret=$?
-		
-	if [ $_ret -ne 0 ]; then
-		return $?
-	fi
-		
-	if [ $FLAG_REBUILD -eq 1 -a "${OPTIONS[0]}" == "" ]; then
-		# rebuild only
-		return 0
-	fi
+    # parse options
+    repo_filter=()
+    _opt_end=0
+    for _opt in "$@"; do
+        if [ "${_opt}" == "--" ]; then
+            _opt_end=1
+        elif [ $_opt_end -eq 0 -a "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
+            OPTIND=0
+            while getopts ":ruvhx" flag "$_opt"; do
+                case "$flag" in
+                    r) FLAG_REBUILD=1 ;;
+                    u) FLAG_DRYRUN=1 ;;
+                    v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
+                    h) FLAG_HELP=1 ;;
+                    x) FLAG_HELP=1 OPTIONS=("${OPTIONS[@]}" "version") ;;
+                    :)	echo "Missing argument for $OPTARG"
+                        return 1
+                        ;;
 
-	
-	# read repo
-	__read_repo "${repo_filter[@]}"
-	
+                    ?)	OPTIONS=("${OPTIONS[@]}" "$_opt")	# pass it to git
+                        ;;
+                esac
+            done
+        elif [ "${_opt:0:1}" == "@" ]; then
+            repo_filter=("${repo_filter[@]}" "${_opt:1}")
+        else
+            OPTIONS=("${OPTIONS[@]}" "$_opt")
+        fi
+    done
 
-	# git commands
-	if [ "${OPTIONS[0]}" == "gui" ]; then
-		commands=( \
-			"${OPTIONS[0]}" \
-			"!lb:${OPTIONS[1]}" \
-			'__repo_status' \
-			"__git_gui \$P_LREV >/dev/null" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "gui!" ]; then
-		unset OPTIONS[0]
-		
-		commands=( \
-			"gui!" \
-			"__git $GIT_GUI ${OPTIONS[*]} >/dev/null" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
-		OPTIONS[0]=$GIT_K
-		
-		commands=( \
-			"${OPTIONS[0]}" \
-			"${OPTIONS[*]} & >/dev/null" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "update" ]; then
-		if [ "${OPTIONS[1]}" == "" ]; then
-			__usage "${OPTIONS[0]}"
-			return 1
-		fi
 
-		commands=( \
-			"${OPTIONS[0]}" \
-			"!rb:${OPTIONS[2]}" \
-			"!lb:${OPTIONS[3]}" \
-			"!dir:rl" \
-			"__update ${OPTIONS[1]} ${OPTIONS[4]}"
-		)
-		
-	elif [ "${OPTIONS[0]}" == "upload" ]; then
-		if [ "${OPTIONS[1]}" == "" ]; then
-			__usage "${OPTIONS[0]}"
-			return 1
-		fi
+    # help
+    if [ "${OPTIONS[0]}" == "" -o $FLAG_HELP -eq 1 ]; then
+        __usage "${OPTIONS[0]}"
 
-		commands=( \
-			"${OPTIONS[0]}" \
-			"!lb:${OPTIONS[2]}" \
-			"!rb:${OPTIONS[3]}" \
-			"!dir:lr" \
-			"__upload ${OPTIONS[1]}" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "gc" ]; then
-		commands=( \
-			"${OPTIONS[0]}" \
-			"__git pack-refs --prune" \
-			"__git reflog expire --all" \
-			"__git repack -a -d -l" \
-			"__git rerere gc" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "backup" ]; then
-		if [ "${OPTIONS[1]}" == "" ]; then
-			OPTIONS[1]="backup"
-		fi
-		
-		commands=( \
-			"${OPTIONS[0]}" \
-			"!dir:lr" \
-			"__git push --mirror ${OPTIONS[1]}" \
-		)
-		
-	elif [ "${OPTIONS[0]}" == "custom" ]; then
-		local _cmd_name="${OPTIONS[0]}(${OPTIONS[1]})"
-		unset OPTIONS[0]
+        if [ "${OPTIONS[0]}" == "" ]; then
+            return 1
+        else
+            return 0
+        fi
+    fi
 
-		commands=( \
-			"$_cmd_name" \
-			"${OPTIONS[*]}" \
-		)
-		
-	else
-		commands=( \
-			"${OPTIONS[0]}" \
-			"__git ${OPTIONS[*]}" \
-		)
-		
-	fi
 
-	
-	__exec_git "${commands[@]}"
+    # update manifest
+    local force=
+    if [ $FLAG_REBUILD -eq 1 ]; then
+        force="force"
+    fi
+
+    __build_prot_manifest $force
+    local _ret=$?
+
+    if [ $_ret -ne 0 ]; then
+        return $?
+    fi
+
+    if [ $FLAG_REBUILD -eq 1 -a "${OPTIONS[0]}" == "" ]; then
+        # rebuild only
+        return 0
+    fi
+
+
+    # read repo
+    __read_repo "${repo_filter[@]}"
+
+
+    # git commands
+    if [ "${OPTIONS[0]}" == "gui" ]; then
+        commands=( \
+            "${OPTIONS[0]}" \
+            "!lb:${OPTIONS[1]}" \
+            '__repo_status' \
+            "__git_gui \$P_LREV >/dev/null" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "gui!" ]; then
+        unset OPTIONS[0]
+
+        commands=( \
+            "gui!" \
+            "__git $GIT_GUI ${OPTIONS[*]} >/dev/null" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
+        OPTIONS[0]=$GIT_K
+
+        commands=( \
+            "${OPTIONS[0]}" \
+            "${OPTIONS[*]} & >/dev/null" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "update" ]; then
+        if [ "${OPTIONS[1]}" == "" ]; then
+            __usage "${OPTIONS[0]}"
+            return 1
+        fi
+
+        commands=( \
+            "${OPTIONS[0]}" \
+            "!rb:${OPTIONS[2]}" \
+            "!lb:${OPTIONS[3]}" \
+            "!dir:rl" \
+            "__update ${OPTIONS[1]} ${OPTIONS[4]}"
+        )
+
+    elif [ "${OPTIONS[0]}" == "upload" ]; then
+        if [ "${OPTIONS[1]}" == "" ]; then
+            __usage "${OPTIONS[0]}"
+            return 1
+        fi
+
+        commands=( \
+            "${OPTIONS[0]}" \
+            "!lb:${OPTIONS[2]}" \
+            "!rb:${OPTIONS[3]}" \
+            "!dir:lr" \
+            "__upload ${OPTIONS[1]}" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "gc" ]; then
+        commands=( \
+            "${OPTIONS[0]}" \
+            "__git pack-refs --prune" \
+            "__git reflog expire --all" \
+            "__git repack -a -d -l" \
+            "__git rerere gc" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "backup" ]; then
+        if [ "${OPTIONS[1]}" == "" ]; then
+            OPTIONS[1]="backup"
+        fi
+
+        commands=( \
+            "${OPTIONS[0]}" \
+            "!dir:lr" \
+            "__git push --mirror ${OPTIONS[1]}" \
+        )
+
+    elif [ "${OPTIONS[0]}" == "custom" ]; then
+        local _cmd_name="${OPTIONS[0]}(${OPTIONS[1]})"
+        unset OPTIONS[0]
+
+        commands=( \
+            "$_cmd_name" \
+            "${OPTIONS[*]}" \
+        )
+
+    else
+        commands=( \
+            "${OPTIONS[0]}" \
+            "__git ${OPTIONS[*]}" \
+        )
+
+    fi
+
+
+    __exec_git "${commands[@]}"
 }
 
 
