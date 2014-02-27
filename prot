@@ -333,8 +333,16 @@ __update()
 	local ret
 	local current_branch
 	local temp_name=
-	
-	
+	local remote
+
+
+	remote=`__git remote | grep "$1"`
+	if [ "$remote" != "$1" ]; then
+		# this repository doesn't have this remote. Skip it.
+		echo "No such remote $1. Skip update."
+		return 255
+	fi
+
 	__repo_status
 	if [ $? -eq 0 ]; then
 		# make temp commit
