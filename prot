@@ -213,7 +213,7 @@ __failed()
 # return <skip> when working dir contains no changes
 __repo_status()
 {
-    local status=$(__git status -s)
+    local status=$(__git status -s | grep -v "^\?\?" )
 
     if [ "$status" != "" ]; then
         return 0
