@@ -782,9 +782,8 @@ __prot()
 
     __build_prot_manifest $force
     local _ret=$?
-
     if [ $_ret -ne 0 ]; then
-        return $?
+        return $_ret
     fi
 
     if [ $FLAG_REBUILD -eq 1 -a "${OPTIONS[0]}" == "" ]; then
