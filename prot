@@ -626,7 +626,6 @@ __usage()
             echo "    gitk|k    run gitk in every repo"
             echo "    update    update repos from a given remote"
             echo "    upload    upload every repo to a given remote"
-            echo "    rebuild   rebuild the prot project list"
             echo "    help      show this help"
             echo "    gc        run garbage collector"
             echo "    backup    mirror repository to a remote backup repository"
@@ -638,7 +637,7 @@ __usage()
             echo "    --help|-h           if specified along with a prot command show detailed help"
             echo "                        for this command. Show this help screen otherwise"
             echo "    --dry-run           don't do anything that would hurt"
-            echo "    --rebuild|-r        rebuild the prot project list before running the command"
+            echo "    --rebuild|-r        rebuild the prot project list before running any command"
             echo "    --version           show version number and exit"
             echo ""
             echo "  git options:"
@@ -760,7 +759,7 @@ __prot()
 
 
     # help
-    if [ "${OPTIONS[0]}" == "" -o $FLAG_HELP -eq 1 ]; then
+    if [ $FLAG_HELP -eq 1 -o $FLAG_REBUILD -eq 0 -a "${OPTIONS[0]}" == "" ]; then
         __usage "${OPTIONS[0]}"
 
         if [ "${OPTIONS[0]}" == "" ]; then
