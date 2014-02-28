@@ -95,7 +95,7 @@ __build_prot_manifest()
 %projects = ();
 @project_list = ();
 
-while ( \$file =~ /$bo.+$bc\s*:\s*$bo.+$bc/gm )
+while ( \$file =~ /$bo[^\s]+$bc\s*:\s*$bo[^\s]+$bc/gm )
 {
     \$path = \$1;
     \$name = \$2;
