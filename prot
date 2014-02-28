@@ -328,10 +328,10 @@ __update()
     local remote
 
 
-    remote=`__git remote | grep "$1"`
-    if [ "$remote" != "$1" ]; then
+    remote=`__git remote | grep "$P_REMOTE"`
+    if [ "$remote" != "$P_REMOTE" ]; then
         # this repository doesn't have this remote. Skip it.
-        echo "No such remote $1. Skip update."
+        echo "No such remote '$P_REMOTE'. Skip update."
         return 255
     fi
 
@@ -347,7 +347,7 @@ __update()
     fi
 
 
-    __git fetch $1
+    __git fetch $P_REMOTE
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
@@ -359,13 +359,13 @@ __update()
         return $ret
     fi
 
-    __git merge $1/$P_RREV
+    __git merge $P_REMOTE/$P_RREV
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
     fi
 
-    __switch_back_branch_temp $P_LREV $2
+    __switch_back_branch_temp $P_LREV $1
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
@@ -398,10 +398,10 @@ __upload()
     local ret
 
 
-    remote=`__git remote | grep "$1"`
-    if [ "$remote" != "$1" ]; then
+    remote=`__git remote | grep "$P_REMOTE"`
+    if [ "$remote" != "$P_REMOTE" ]; then
         # this repository doesn't have this remote. Skip it.
-        echo "No such remote $1. Skip upload."
+        echo "No such remote '$P_REMOTE'. Skip upload."
         return 255
     fi
 
@@ -411,13 +411,13 @@ __upload()
         return $ret
     fi
 
-    __git push $1 $P_LREV:$P_RREV
+    __git push $P_REMOTE $P_LREV:$P_RREV
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
     fi
 
-    __switch_back_branch_temp $P_LREV $2
+    __switch_back_branch_temp $P_LREV
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
@@ -473,6 +473,7 @@ __exec_git()
     P_RREV_U=
     P_LREV_U=
     DIR=lo
+    P_REMOTE=
     while [ 1 = 1 ]; do
         internal_cmd=$1
         if [ "${internal_cmd:0:4}" == "!rb:" ]; then
@@ -482,7 +483,10 @@ __exec_git()
             P_LREV_U=${internal_cmd:4}
             shift
         elif [ "${internal_cmd:0:5}" == "!dir:" ]; then
-            DIR=${internal_cmd:5}
+            if [ "${internal_cmd:7:1}" == ":" ]; then
+                P_REMOTE=${internal_cmd:8}
+            fi
+            DIR=${internal_cmd:5:2}
             shift
         else
             break
@@ -828,8 +832,8 @@ __prot()
             "${OPTIONS[0]}" \
             "!rb:${OPTIONS[2]}" \
             "!lb:${OPTIONS[3]}" \
-            "!dir:rl" \
-            "__update ${OPTIONS[1]} ${OPTIONS[4]}"
+            "!dir:rl:${OPTIONS[1]}" \
+            "__update ${OPTIONS[4]}"
         )
 
     elif [ "${OPTIONS[0]}" == "upload" ]; then
@@ -842,8 +846,8 @@ __prot()
             "${OPTIONS[0]}" \
             "!lb:${OPTIONS[2]}" \
             "!rb:${OPTIONS[3]}" \
-            "!dir:lr" \
-            "__upload ${OPTIONS[1]}" \
+            "!dir:lr:${OPTIONS[1]}" \
+            "__upload" \
         )
 
     elif [ "${OPTIONS[0]}" == "gc" ]; then
@@ -862,7 +866,7 @@ __prot()
 
         commands=( \
             "${OPTIONS[0]}" \
-            "!dir:lr" \
+            "!dir:lr:${OPTIONS[1]}" \
             "__git push --mirror ${OPTIONS[1]}" \
         )
 
