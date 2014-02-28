@@ -669,7 +669,7 @@ __usage()
         echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
 
     elif [ "$1" == "upload" ]; then
-        echo "usage: prot $1 <remote> [local branch [remove branch]]"
+        echo "usage: prot $1 <remote> [remote branch [local branch]]"
 
     elif [ "$1" != "" ]; then
         echo "No detailed help for command '$1' available. Try 'prot --help'"
@@ -844,8 +844,8 @@ __prot()
 
         commands=( \
             "${OPTIONS[0]}" \
-            "!lb:${OPTIONS[2]}" \
-            "!rb:${OPTIONS[3]}" \
+            "!rb:${OPTIONS[2]}" \
+            "!lb:${OPTIONS[3]}" \
             "!dir:lr:${OPTIONS[1]}" \
             "__upload" \
         )
