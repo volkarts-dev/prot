@@ -51,14 +51,6 @@ __set_base()
 }
 
 
-__handle_egit_compatibility()
-{
-    if [ -f "$BASE_PATH/.repo/egit_project.list" ]; then
-        mv "$BASE_PATH/.repo/egit_project.list" "$BASE_PATH/.repo/prot.list"
-    fi
-}
-
-
 __build_prot_manifest()
 {
     if [ ! -f "$BASE_PATH/.repo/manifest.xml" ]; then
@@ -706,10 +698,6 @@ __prot()
         echo "Not running within a repo root directory"
         return 1
     fi
-
-
-    # compat
-    __handle_egit_compatibility
 
 
     # options
