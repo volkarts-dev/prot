@@ -89,7 +89,6 @@ __build_prot_manifest()
     t=\`
 
     PERL_CODE=$(cat <<PERL_CODE
-
 \$file = ${t}${bo}cd ${BASE_PATH}; repo list${bc}${t};
 
 %projects = ();
@@ -109,10 +108,7 @@ while ( \$file =~ /$bo[^\s]+$bc\s*:\s*$bo[^\s]+$bc/gm )
         push @project_list, \$path;
     }
     \$projects{\$path} = \$pid;
-
 }
-
-
 
 if ( -e "$BASE_PATH/.repo/prot.list" )
 {
@@ -126,7 +122,7 @@ if ( -e "$BASE_PATH/.repo/prot.list" )
         {
             if ( \$pdef[0] =~ /^#/ )
             {
-                \$projects{\$pdef[1]} = "#\$projects{\$pdef[1]}"
+                \$projects{\$pdef[1]} = "#\$projects{\$pdef[1]}";
             }
 
             if ( \$pdef[2] )
