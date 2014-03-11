@@ -213,7 +213,13 @@ __failed()
 # return <skip> when working dir contains no changes
 __repo_status()
 {
-    local status=$(__git status -s | grep -v "^\?\?" )
+    local status
+
+    if [ "$1" == "--skip-untracked" ]; then
+        status=$(__git status -s | grep -v "^??" )
+    else
+        status=$(__git status -s)
+    fi
 
     if [ "$status" != "" ]; then
         return 0
@@ -281,7 +287,7 @@ __switch_branch_temp()
     fi
 
 
-    __repo_status
+    __repo_status --skip-untracked
     if [ $? -eq 0 ]; then
         echo "Working directory dirty. Commit your changes first."
         return 1
@@ -351,7 +357,7 @@ __update()
         return 255
     fi
 
-    __repo_status
+    __repo_status --skip-untracked
     if [ $? -eq 0 ]; then
         # repo dirty? stash changes
         temp_name=prot_update_temp_$$
