@@ -357,6 +357,19 @@ __update()
         return 255
     fi
 
+    __git fetch $P_REMOTE
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    local not_merged=`__git branch -r --no-merged | grep "$P_REMOTE/$P_RREV"`
+    if [ "$not_merged" == "" ]; then
+        # nothing to do - remote branch is already merged
+        return 0
+    fi
+
+
     __repo_status --skip-untracked
     if [ $? -eq 0 ]; then
         # repo dirty? stash changes
@@ -365,12 +378,6 @@ __update()
         __git stash save "$temp_name"
     fi
 
-
-    __git fetch $P_REMOTE
-    ret=$?
-    if [ $ret -ne 0 ]; then
-        return $ret
-    fi
 
     __switch_branch_temp $P_LREV
     ret=$?
