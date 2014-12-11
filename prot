@@ -905,3 +905,5 @@ __prot()
 # run main
 __prot "$@"
 exit $?
+
+# kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;
