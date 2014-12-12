@@ -445,9 +445,13 @@ __git_gui()
 {
     local ret
 
-    echo "Working directory is dirty. Starting git gui ..."
+    if [ "$1" != "forced" ]; then
+        echo "Working directory is dirty. Starting git gui ..."
+    else
+        shift
+    fi
 
-    if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+    if [ "$1" != "forced" -a "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
         __git checkout "$1"
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -461,7 +465,7 @@ __git_gui()
         return $ret
     fi
 
-    if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+    if [ "$1" != "forced" -a "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
         __git rebase "$1" "$LOCAL_BRANCH"
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -837,7 +841,7 @@ __prot()
 
         commands=( \
             "gui!" \
-            "__git $GIT_GUI ${OPTIONS[*]} >/dev/null" \
+            "__git_gui forced ${OPTIONS[*]} >/dev/null" \
         )
 
     elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
