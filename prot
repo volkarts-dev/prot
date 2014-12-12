@@ -444,6 +444,8 @@ __upload()
 __git_gui()
 {
     local ret
+    local gui_pid
+    local shell_pid
 
     if [ "$1" != "forced" ]; then
         echo "Working directory is dirty. Starting git gui ..."
@@ -459,8 +461,65 @@ __git_gui()
         fi
     fi
 
-    __git $GIT_GUI
+    # run git gui async to allow to start a shell
+    ( __git $GIT_GUI ) &
+    gui_pid=$!
+
+    # only launch the shell when called from a tty
+    if [ -t 0 ]; then
+        (
+            should_exit=0
+            while true; do
+                echo "Type 's' to enter a shell"
+                while true; do
+                    read -n 1 -s INP </dev/tty
+                    if [ "$INP" == "s" -o "$INP" == "S" ]; then
+                        break;
+                    fi
+                done
+                trap 'should_exit=1' SIGTERM
+                (
+                    echo "Entering a shell. >ou are in the repositories root directory."
+                    echo "When you change files, remember to do a rescan in git gui."
+                    echo "Type 'exit' to exit the shell."
+                    [ -e ~/.bashrc ] && source ~/.bashrc
+                    env PS1='git> ' bash --norc </dev/tty
+                )
+                trap - SIGTERM
+                if [ $should_exit -eq 1 ]; then
+                    break;
+                fi
+            done
+        ) &
+        shell_pid=$!
+    else
+        echo "stdin is not a terminal. Cannot launch a shell."
+        shell_pid=
+    fi
+
+    # wait for git gui to finish
+    wait $gui_pid
     ret=$?
+    if echo "`jobs -p`" | grep "$gui_pid" >/dev/null 2>&1; then
+        ( kill -s TERM $gui_pid 2>/dev/null ) &
+        wait $gui_pid 2>/dev/null
+        ret=$?
+    fi
+
+    # stop shell, if any
+    if [ ! -z "$shell_pid" ]; then
+        if echo "`jobs -p`" | grep "$shell_pid" >/dev/null 2>&1; then
+            echo "Waiting for user shell to exit"
+            ( kill -s TERM $shell_pid 2>/dev/null ) &
+            wait $shell_pid 2>/dev/null
+            if [ -t 0 ]; then
+                # just in case we kill the silent read
+                stty echo
+            fi
+        fi
+    fi
+
+    # $ret is git gui's exit code
     if [ $ret -ne 0 ]; then
         return $ret
     fi
