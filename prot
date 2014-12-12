@@ -479,7 +479,7 @@ __git_gui()
                 done
                 trap 'should_exit=1' SIGTERM
                 (
-                    echo "Entering a shell. >ou are in the repositories root directory."
+                    echo "Entering a shell. You are in the repositories root directory."
                     echo "When you change files, remember to do a rescan in git gui."
                     echo "Type 'exit' to exit the shell."
                     [ -e ~/.bashrc ] && source ~/.bashrc
