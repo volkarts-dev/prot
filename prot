@@ -679,13 +679,14 @@ __usage()
 
     elif [ "$1" == "gui" ]; then
         echo "usage: prot $1 [local branch]"
-
         if [  $FLAG_HELP -eq 1 ]; then
             echo ""
             echo "  local branch:"
             echo "    If specified and differs from currently checked out branch prot first"
             echo "    switch to <local branch>, run git gui as normal and then rebase the former"
             echo "    branch to the new top of <local branch>"
+        else
+            echo "       prot $1 --help"
         fi
     elif [ "$1" == "gitk" -o "$1" == "k" ]; then
         echo "Usage: prot gitk [--parallel]"
