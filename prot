@@ -683,6 +683,15 @@ __usage()
             echo "    switch to <local branch>, run git gui as normal and then rebase the former"
             echo "    branch to the new top of <local branch>"
         fi
+    elif [ "$1" == "gitk" -o "$1" == "k" ]; then
+        echo "Usage: prot gitk [--parallel]"
+        if [  $FLAG_HELP -eq 1 ]; then
+            echo ""
+            echo "  --parallel:"
+            echo "    Start all gitk's in all repositories at once"
+        else
+            echo "       prot gitk --help"
+        fi
     elif [ "$1" == "update" ]; then
         echo "usage: prot $1 <remote> [remote branch [local branch [--rebase]]]"
 
@@ -832,11 +841,14 @@ __prot()
         )
 
     elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
+        local _par=
         OPTIONS[0]=$GIT_K
-
+        if [ "${OPTIONS[1]}" == "--parallel" ]; then
+            _par='&'
+        fi
         commands=( \
             "${OPTIONS[0]}" \
-            "${OPTIONS[*]} & >/dev/null" \
+            "${OPTIONS[*]} $_par >/dev/null" \
         )
 
     elif [ "${OPTIONS[0]}" == "update" ]; then
