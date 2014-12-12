@@ -462,7 +462,7 @@ __git_gui()
     fi
 
     # run git gui async to allow to start a shell
-    ( __git $GIT_GUI ) &
+    ( __git $GIT_GUI 2>&1 >/dev/null ) &
     gui_pid=$!
 
     # only launch the shell when called from a tty
@@ -893,7 +893,7 @@ __prot()
             "${OPTIONS[0]}" \
             "!lb:${OPTIONS[1]}" \
             '__repo_status' \
-            "__git_gui \$P_LREV >/dev/null" \
+            "__git_gui \$P_LREV" \
         )
 
     elif [ "${OPTIONS[0]}" == "gui!" ]; then
@@ -901,7 +901,7 @@ __prot()
 
         commands=( \
             "gui!" \
-            "__git_gui forced ${OPTIONS[*]} >/dev/null" \
+            "__git_gui forced ${OPTIONS[*]}" \
         )
 
     elif [ "${OPTIONS[0]}" == "gitk" -o "${OPTIONS[0]}" == "k" ]; then
