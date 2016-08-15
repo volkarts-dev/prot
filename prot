@@ -445,38 +445,31 @@ __upload()
 }
 
 
-__git_gui()
+__launch_gui_with_shell()
 {
-    local ret
-    local gui_pid
-    local shell_pid
+    local gui_cmd
 
-    if [ "$1" != "forced" ]; then
-        echo "Working directory is dirty. Starting git gui ..."
+    if [ "$1" == "citool" ]; then
+        gui_cmd="gui citool"
     else
-        shift
-    fi
-
-    if [ "$1" != "forced" -a "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
-        __git checkout "$1"
-        ret=$?
-        if [ $ret -ne 0 ]; then
-            return $ret
-        fi
+        gui_cmd="$GIT_GUI"
     fi
 
     # run git gui async to allow to start a shell
-    ( __git $GIT_GUI 2>&1 >/dev/null ) &
-    gui_pid=$!
+    ( __git $gui_cmd 2>&1 >/dev/null ) &
+    local gui_pid=$!
 
     # only launch the shell when called from a tty
+    local shell_pid
     if [ -t 0 ]; then
         (
             should_exit=0
             while true; do
                 echo "Type 's' to enter a shell"
                 while true; do
+                    trap '{ stty echo; exit 255; }' SIGTERM SIGINT
                     read -n 1 -s INP </dev/tty
+                    trap - SIGTERM SIGINT
                     if [ "$INP" == "s" -o "$INP" == "S" ]; then
                         break;
                     fi
@@ -486,8 +479,13 @@ __git_gui()
                     echo "Entering a shell. You are in the repositories root directory."
                     echo "When you change files, remember to do a rescan in git gui."
                     echo "Type 'exit' to exit the shell."
-                    [ -e ~/.bashrc ] && source ~/.bashrc
-                    env PS1='git> ' bash --norc </dev/tty
+                    local rcfile=`mktemp`
+                    cat >$rcfile <<'EOF'
+[ -e ~/.bashrc ] && source ~/.bashrc
+PS1="git $(__git_ps1 '(\e[0;35m%s\e[0m)')> "
+EOF
+                    bash --rcfile $rcfile </dev/tty
+                    rm $rcfile
                 )
                 trap - SIGTERM
                 if [ $should_exit -eq 1 ]; then
@@ -503,7 +501,7 @@ __git_gui()
 
     # wait for git gui to finish
     wait $gui_pid
-    ret=$?
+    local ret=$?
     if echo "`jobs -p`" | grep "$gui_pid" >/dev/null 2>&1; then
         ( kill -s TERM $gui_pid 2>/dev/null ) &
         wait $gui_pid 2>/dev/null
@@ -522,6 +520,42 @@ __git_gui()
             fi
         fi
     fi
+
+    # $ret is git gui's exit code
+    return $ret
+}
+
+
+__git_gui()
+{
+    local ret
+
+    if [ "$1" != "forced" ]; then
+        if [ -n "`git branch | grep "\* staging"`" ]; then
+            echo "Starting feature mode"
+            __feature
+            ret=$?
+            if [ $ret -ne 255 ]; then
+                return $ret
+            fi
+        else
+            echo "Working directory is dirty. Starting git gui ..."
+        fi
+
+        if [ "$1" != "" -a "$LOCAL_BRANCH" != "$1" ]; then
+            __git checkout "$1"
+            ret=$?
+            if [ $ret -ne 0 ]; then
+                return $ret
+            fi
+        fi
+    else
+        shift
+    fi
+
+    # run git gui async with a shell
+    __launch_gui_with_shell
+    ret=$?
 
     # $ret is git gui's exit code
     if [ $ret -ne 0 ]; then
