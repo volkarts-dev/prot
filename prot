@@ -406,6 +406,10 @@ __update()
             return $ret
         fi
     fi
+
+
+    # update submodules
+    __git submodule update --init
 }
 
 
