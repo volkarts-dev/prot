@@ -385,7 +385,7 @@ __update()
         return $ret
     fi
 
-    __git merge $P_REMOTE/$P_RREV
+    __git merge --no-edit $P_REMOTE/$P_RREV
     ret=$?
     if [ $ret -ne 0 ]; then
         return $ret
