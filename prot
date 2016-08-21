@@ -31,7 +31,7 @@ GIT_K=${GIT_K:-gitk}
 
 __d()
 {
-    [ $FLAG_VERBOSITY -ge 3 ] && echo -e "\e[1;30mDEBUG $1\e[0m"
+    [ $FLAG_VERBOSITY -ge 3 ] && echo -e "\e[1;30mDEBUG $1\e[0m" 1>&2
 }
 
 
