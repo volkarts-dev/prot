@@ -621,9 +621,60 @@ __check_remotes()
 }
 
 
+__init_repo()
+{
+    echo "Initialize repo $P_NAME in $P_PATH"
+
+    cd $BASE_PATH
+    mkdir -p "$P_PATH"
+    cd "$P_PATH"
+
+    local ret
+
+    local r
+    local r_attrs
+    local r_url=
+    for r in ${REMOTES[@]}; do
+        r_attrs=($(echo $r | tr "|" "\n"))
+
+        if [ "${r_attrs[1]}" == "$P_REMOTE" ]; then
+            r_url=$(__compute_full_remote_url "${r_attrs[1]}" "${r_attrs[2]%/}")
+            break
+        fi
+    done
+    __d "Cloning remote '$P_REMOTE' at '$r_url'"
+
+    if [ "$r_url" == "" ]; then
+        echo -e "\033[1;31mUnknown remote \033[0;36m$P_REMOTE\033[1;31m. Cannot checkout repository\033[0m" 1>&2
+        return 1
+    fi
+
+    __translate_ref "$P_TRANSTABLE" "$P_RREV_U" "$P_REMOTE"
+    local ref="$TREF"
+
+    __git init
+
+    __check_remotes
+
+    __git fetch "$P_REMOTE"
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+
+    __git checkout -t "${P_REMOTE}/${ref}"
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        return $ret
+    fi
+}
+
+
 __exec_git()
 {
     ORIG_PATH=$PWD
+
+    __d "repo base path: $BASE_PATH"
 
     trap __exit_hook INT TERM
 
@@ -664,14 +715,31 @@ __exec_git()
         P_NAME=${P_ATTRS[0]}
         P_PATH=${P_ATTRS[1]}
         P_TRANSTABLE=${P_ATTRS[2]}
+        __d "Project: $P_NAME, Path: $P_PATH"
 
-
-        cd $BASE_PATH/$P_PATH 2>/dev/null
-        if [ $? -ne 0 ]; then
-            echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m" 1>&2
-            __failed
-            break;
+        if [ ! -d "$BASE_PATH/$P_PATH" -o ! -e "$BASE_PATH/$P_PATH/.git/config" ]; then
+            if [ "$P_RREV_U" != "" -a "$P_REMOTE" != "" ]; then
+                __init_repo
+                if [ $? -ne 0 ]; then
+                    __failed
+                    break;
+                fi
+            else
+                if [ ! -d "$BASE_PATH/$P_PATH" ]; then
+                    echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not exists\033[0m" 1>&2
+                else
+                    echo -e "\033[1;31mCannot switch to directory \033[0;36m$P_PATH\033[1;31m for project \033[0;36m$P_NAME\033[1;31m: Directory does not contain a git repository\033[0m" 1>&2
+                fi
+                __failed
+                break;
+            fi
         fi
+
+        cd $BASE_PATH/$P_PATH
+        eval "__d \"Working in $PWD\""
+
+
+        __check_remotes
 
 
         LOCAL_BRANCH=$(__get_local_branch)
@@ -719,9 +787,6 @@ __exec_git()
         branch_info+=")"
 
         echo -e "### $_cmd_info: \033[1;37m${P_NAME}\033[0;37m $branch_info ###"
-
-
-        eval "__d \"Working in $PWD\""
 
 
         for cmd in "$@"; do
