@@ -158,29 +158,6 @@ PERL_CODE
 
     echo $PERL_CODE | perl
     return $?
-}	
-
-
-__filter_projects()
-{
-    if [ $# -eq 0 ]; then
-        return
-    fi
-
-
-    declare -a _projects=("${PROJECTS[@]}")
-
-    PROJECTS=()
-
-    for _project in "${_projects[@]}"; do
-        for _arg in "$@"; do
-            __d "Check $_project against $_arg"
-
-            if echo $_project | grep -i $_arg > /dev/null; then
-                PROJECTS=("${PROJECTS[@]}" "$_project")
-            fi
-        done
-    done
 }
 
 
@@ -196,9 +173,33 @@ __git()
 
 __read_repo()
 {
-    PROJECTS=($(cat $BASE_PATH/.repo/prot.list | grep "^[^#]"))
+    local _projects
+    local _project
+    local _arg
 
-    __filter_projects "$@"
+    declare -a _projects=($(cat $BASE_PATH/.repo/prot.list | grep "^\s*[^#]"))
+
+    REMOTES=()
+    PROJECTS=()
+
+    for _project in "${_projects[@]}"; do
+        __d "Inspect prot.list line: $_project"
+        if echo $_project | grep "^_remote_|" > /dev/null; then
+            __d "Found remote: $_project"
+            REMOTES=("${REMOTESS[@]}" "$_project")
+        elif [ $# -eq 0 ]; then
+            __d "Found project: $_project"
+            PROJECTS=("${PROJECTS[@]}" "$_project")
+        else
+            __d "Filter projects by $_arg"
+            for _arg in "$@"; do
+                if echo $_project | grep -i $_arg > /dev/null; then
+                    __d "Found project: $_project"
+                    PROJECTS=("${PROJECTS[@]}" "$_project")
+                fi
+            done
+        fi
+    done
 }
 
 
@@ -571,6 +572,52 @@ __git_gui()
     fi
 
     return 0
+}
+
+
+__compute_full_remote_url()
+{
+    local url=$2
+    local colon_check=$(echo "$2" | grep ":")
+    local slash_check=$(echo "$2" | grep "^/")
+    if [ "$colon_check" == "" -a "$slash_check" == "" ]; then
+        local c
+        for c in `echo "$P_PATH" | tr '/' ' '`; do
+            url="../${url}"
+        done
+    fi
+    if [ "${P_PATH}" == "." ]; then
+        url="${url}/"
+    else
+        url="${url}/${P_PATH}"
+    fi
+    __d "Computed remote url for '$1': $url"
+    echo $url
+}
+
+
+__check_remotes()
+{
+    __d "Check remotes"
+
+    local r
+    local r_attrs
+    local r_url=
+    for r in ${REMOTES[@]}; do
+        r_attrs=($(echo $r | tr '|' ' '))
+
+        local url=$(__compute_full_remote_url "${r_attrs[1]}" "${r_attrs[2]%/}")
+
+        local repo_remote=$(__git remote | grep "${r_attrs[1]}")
+        if [ "$repo_remote" == "" ]; then
+            __git remote add "${r_attrs[1]}" "$url"
+        else
+            local c_url=$(__git remote get-url "${r_attrs[1]}")
+            if [ "$c_url" != "$url" ]; then
+                __git remote set-url "${r_attrs[1]}" "$url"
+            fi
+        fi
+    done
 }
 
 
