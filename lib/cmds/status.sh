@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2012-2016 by Daniel Volk <mail@volkarts.com>
+# Copyright 2012-2017 by Daniel Volk <mail@volkarts.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,27 +16,38 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-_S=`readlink -f $0`
-_D=`dirname $_S`
+__do_show_status() {
+    local local_branch=`git_wrapper symbolic-ref --short HEAD 2>/dev/null`
 
-_LIB_PATHS=($_D/lib /usr/share/prot /usr/local/share/prot)
-
-LIB_PATH=
-for _LP in $_LIB_PATHS; do
-    if [ -e "$_LP/main.sh" ]; then
-        LIB_PATH="$_LP"
-        source "$_LP/main.sh"
-        break
+    if [ -z "$local_branch" ]; then
+        # no feature branch checked out
+        return 0
     fi
-done
 
-CALLER_CMD=`basename $0`
+    std_out "${col_wt}Status of project $CURRENT_PROJECT${col_off}"
 
-if [ "$LIB_PATH" == "" ]; then
-    echo "`basename $0` was not properbly installed" >&2
-    exit 1
-fi
+    local color
+    [ -t 0 ] && color="-c color.status=1"
+    git_wrapper $color status
+}
 
-exec_gprot "$@"
+subexec_status() {
+    # initial setup
+    bootstrap_repo "$@"
+
+    # parse sub commands args
+    parse_args "" "$@"
+
+    local feature="${CMD_ARGS[0]}"
+
+    # start feature branch in projects
+    forall_cd __do_show_status "$feature"
+
+    return $?
+}
+
+summary_status() {
+    std_out "Shows the status of projects"
+}
 
 # kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;

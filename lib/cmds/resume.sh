@@ -16,27 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-_S=`readlink -f $0`
-_D=`dirname $_S`
+subexec_resume() {
+    find_cmd "start" --keep-cmd
 
-_LIB_PATHS=($_D/lib /usr/share/prot /usr/local/share/prot)
+    subexec_start "$@" --resume
 
-LIB_PATH=
-for _LP in $_LIB_PATHS; do
-    if [ -e "$_LP/main.sh" ]; then
-        LIB_PATH="$_LP"
-        source "$_LP/main.sh"
-        break
-    fi
-done
+    return $?
+}
 
-CALLER_CMD=`basename $0`
-
-if [ "$LIB_PATH" == "" ]; then
-    echo "`basename $0` was not properbly installed" >&2
-    exit 1
-fi
-
-exec_gprot "$@"
+summary_resume() {
+    std_out "Checking out a feature branch"
+}
 
 # kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;

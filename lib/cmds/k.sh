@@ -16,27 +16,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-_S=`readlink -f $0`
-_D=`dirname $_S`
+__do_open_gitk() {
+    std_out "${col_wt}Open gitk for ${CURRENT_PROJECT}${col_off}"
 
-_LIB_PATHS=($_D/lib /usr/share/prot /usr/local/share/prot)
-
-LIB_PATH=
-for _LP in $_LIB_PATHS; do
-    if [ -e "$_LP/main.sh" ]; then
-        LIB_PATH="$_LP"
-        source "$_LP/main.sh"
-        break
+    if [ "${CMD_ARGS[parallel]}" == "1" ]; then
+        git_wrapper k "$@" &
+    else
+        git_wrapper k "$@"
     fi
-done
 
-CALLER_CMD=`basename $0`
+}
 
-if [ "$LIB_PATH" == "" ]; then
-    echo "`basename $0` was not properbly installed" >&2
-    exit 1
-fi
+subexec_k() {
+    # initial setup
+    bootstrap_repo "$@"
 
-exec_gprot "$@"
+    # parse sub commands args
+    parse_args "p:parallel" "--allow-unknown-args" "$@"
+
+    # update projects
+    forall_cd __do_open_gitk "${UNKNOWN_CMD_ARGS[@]}"
+
+    return $?
+}
+
+summary_k() {
+    std_out "Start gitk"
+}
 
 # kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;

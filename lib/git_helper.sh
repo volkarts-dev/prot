@@ -16,27 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-_S=`readlink -f $0`
-_D=`dirname $_S`
+__git_ps1() {
+    local exit=$?
+    local head
+    local gitstring
 
-_LIB_PATHS=($_D/lib /usr/share/prot /usr/local/share/prot)
-
-LIB_PATH=
-for _LP in $_LIB_PATHS; do
-    if [ -e "$_LP/main.sh" ]; then
-        LIB_PATH="$_LP"
-        source "$_LP/main.sh"
-        break
+    head=`git symbolic-ref --short HEAD 2>/dev/null`
+    if [ -z "${head}" ]; then
+        head="Detached HEAD: `git rev-parse --short HEAD 2>/dev/null`"
     fi
-done
 
-CALLER_CMD=`basename $0`
+    gitstring=$head
 
-if [ "$LIB_PATH" == "" ]; then
-    echo "`basename $0` was not properbly installed" >&2
-    exit 1
-fi
+    local printf_format=' (%s)'
+    if [ ! -z "$1" ]; then
+        printf_format="${1:-$printf_format}"
+    fi
 
-exec_gprot "$@"
+    printf -- "$printf_format" "$gitstring"
+}
 
 # kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;
