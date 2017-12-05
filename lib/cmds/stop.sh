@@ -30,25 +30,34 @@ __do_stop_feature_branch() {
         return 0
     fi
 
-    std_out "${col_wt}Stop feature branch ${feature_name} in project $CURRENT_PROJECT${col_off}"
+    std_out "${col_wt}Leave feature branch ${local_branch} in project $CURRENT_PROJECT${col_off}"
 
-    git_branch_stash_save --silent-3
-    if [ $? -ne 0 -a $? -ne 3 ]; then
+    # save the current state
+    git_stash_save
+    if [ $? -ne 0 ]; then
+        lerror "Error while saving untracked state"
         return 1
     fi
 
     # get remote head
     local project_rev=`get_project_revision "$CURRENT_PROJECT"`
 
-    # checkout feature branch
-    git_wrapper checkout "$project_rev"
+    # checkout upstream's HEAD (and go into detach head mode)
+    git_wrapper -c advice.detachedHead=false checkout "upstream/$project_rev"
     if [ $? -ne 0 ]; then
         lerror "Error while checking out remote head"
         return 1
     fi
+
+    # restore previous saved state
+    git_stash_pop
+    if [ $? -ne 0 ]; then
+        lerror "Merge conflict while restoring saved state"
+        return 1
+    fi
 }
 
-subexec_start() {
+subexec_stop() {
     # initial setup
     bootstrap_repo "$@"
 

@@ -46,7 +46,10 @@ __do_upload_for_review() {
     local head_id=`git_wrapper rev-parse $local_branch`
     local remote_id=`git_wrapper rev-parse upstream/$revision`
 
+    ldebug "feature branch: $local_branch, remote branch: upstream/$revision, " \
+                "head id: $head_id, remote id: $remote_id"
     if [ "$head_id" == "$remote_id" ]; then
+        ldebug "No changes between HEAD an upstream/$revision"
         # nothing to do
         std_err "No changes to upload"
         return 0
@@ -62,6 +65,7 @@ __do_upload_for_review() {
 
     if [ $ret -ne 0 ]; then
         if [[ "$error_out" == *"(no new changes)"* ]]; then
+            ldebug "Already pushed all changes for review"
             std_out "No changes to upload"
             return 0
         fi

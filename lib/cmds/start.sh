@@ -16,39 +16,43 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-__do_start_feature_branch() {
-    git_branch_stash_save --silent-3
-    if [ $? -ne 0 -a $? -ne 3 ]; then
-        return 1
-    fi
-
+__do_start_feature_branch()
+{
     local feature_name="$1"
 
-    local local_branch=`git_wrapper branch | grep -E "(^|\* )$feature_name\$"`
+    local local_branch=`git_wrapper branch | grep -E "^[* ]*$feature_name\$"`
 
     if [ "$local_branch" == "* $feature_name" ]; then
         # already checked out
-        return 0
+        return $?
     fi
 
     if [ "$2" == "--resume" ]; then
         if [ "$local_branch" == "" ]; then
             # while resuming, skip projects without the specified feature branch instead creating the branch
-            lwarning "Skipping resume of ${feature_name} in project ${CURRENT_PROJECT}. Feature does not exists."
+            linfo "Skipping resume of ${feature_name} in project ${CURRENT_PROJECT}. Feature does not exists."
             return 1
         else
-            std_out "${col_wt}Resume feature branch ${feature_name} in project $CURRENT_PROJECT${col_off}"
+            std_out "${col_wt}Enter feature branch ${feature_name} in project $CURRENT_PROJECT${col_off}"
         fi
     else
-        std_out "${col_wt}Starting new feature branch ${feature_name} in project $CURRENT_PROJECT${col_off}"
+        std_out "${col_wt}Creating new feature branch ${feature_name} in project $CURRENT_PROJECT${col_off}"
+    fi
+
+    # save the current state
+    git_stash_save
+    if [ $? -ne 0 ]; then
+        lerror "Error while saving untracked state"
+        return 1
     fi
 
     # get remote head
     local project_rev=`get_project_revision "$CURRENT_PROJECT"`
 
     # create non existing branch
-    if [ "$local_branch" == "" ]; then
+    if [ "$2" != "--resume" -a "$local_branch" == "" ]; then
         git_wrapper branch --no-track "$feature_name" "upstream/$project_rev"
+        [ $? -ne 0 ] && return 1
     fi
 
     # checkout feature branch
@@ -58,17 +62,23 @@ __do_start_feature_branch() {
         return 1
     fi
 
-    # restore stash if applicable
-    git_branch_stash_pop --silent-3
-    [ $? -ne 0 -a $? -ne 3 ] && return 1
+    # restore previous saved state
+    git_stash_pop
+    if [ $? -ne 0 ]; then
+        lerror "Merge conflict while restoring saved state"
+        return 1
+    fi
+
+    return 0
 }
 
-subexec_start() {
+subexec_start()
+{
     # initial setup
     bootstrap_repo "$@"
 
     # parse sub commands args
-    parse_args "" "$@"
+    parse_args ":resume" "$@"
 
     # check parameter
     local feature_name="${CMD_ARGS[0]}"
@@ -85,7 +95,8 @@ subexec_start() {
     return $?
 }
 
-summary_start() {
+summary_start()
+{
     std_out "Start (create) a feature branch"
 }
 

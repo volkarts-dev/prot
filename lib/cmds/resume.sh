@@ -19,7 +19,7 @@
 subexec_resume() {
     find_cmd "start" --keep-cmd
 
-    subexec_start "$@" --resume
+    subexec_start --resume "$@"
 
     return $?
 }

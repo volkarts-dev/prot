@@ -16,6 +16,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# usage: parse_args <parameter definitions> [parameters]
+#   Where "paramater definitions" (param_defs) is:
+#
+#     param_defs = "" | param_def (" " param_def)*
+#     param_def = ( short_name ("::" type)? ) |
+#                   ( short_name? ":" long_name (":" type)? )
+#     short_name = [a-z]
+#     long_name = [a-z][a-z0-9-]*
+#     type = "r" : "o"
+#
+#  short_name is matched against single dash paramters. The form
+#    "-abc" is allowed.
+#  long_name matches against double dash paramters.
+#  If type is r, the parameter must be followed by a value.
+#  If type is o, the parameter can by followed by a value.
+#  A value is considered any string that does not start with a dash
+#
 parse_args() {
     local options
     local pass_through=0
@@ -29,6 +46,7 @@ parse_args() {
     local found
     local args
     local argi
+    local oldIFS
 
     options=( "$1" )
     ocnt=${#options[@]}
@@ -43,12 +61,19 @@ parse_args() {
     UNKNOWN_CMD_ARGS=( )
     optname=( )
     for (( i = 0 ; i < ocnt ; i++ )); do
-        opt=( ${options[$i]//:/ } )
-        optname[$i]=${opt[0]}
-        [ "${opt[1]}" != "" ] && optname[$i]=${opt[1]}
+        oldIFS=$IFS
+        IFS=":"
+        opt=( ${options[$i]} )
+        IFS="$oldIFS"
+        if [ "${opt[1]}" == "" ]; then
+            optname[$i]=${opt[0]}
+        else
+            optname[$i]=${opt[1]}
+        fi
     done
 
     args=( )
+    # expand "-abc" to "-a -b -c"
     while [ "$1" != "" ]; do
         param="$1"
         if [ ${#param} -gt 1 -a "${param:0:1}" == "-" -a "${param:1:1}" != "-" ]; then
@@ -74,7 +99,10 @@ parse_args() {
         else
             found=0
             for (( i = 0 ; i < ocnt ; i++ )); do
-                opt=( ${options[$i]//:/ } )
+                oldIFS=$IFS
+                IFS=":"
+                opt=( ${options[$i]} )
+                IFS="$oldIFS"
                 ldebug "  test opt" "${optname[i]}" "-${opt[0]}" "--${opt[1]}" ":" "$param"
                 if [ "-${opt[0]}" == "$param" -o "--${opt[1]}" == "$param" ]; then
                     if [ "${opt[2]}" == "r" ]; then
@@ -214,6 +242,8 @@ forall() {
     # TODO collect stderr for summary
     local summary=
     for CURRENT_PROJECT in "${PROJECTS[@]}"; do
+        linfo "forall(): Processing project $CURRENT_PROJECT"
+
         reset_project_state
         "$@"
         ret=$?
@@ -240,6 +270,8 @@ forall_cd() {
     local ret=0
 
     for CURRENT_PROJECT in "${PROJECTS[@]}"; do
+        linfo "forall_cd(): Processing project $CURRENT_PROJECT"
+
         reset_project_state
 
         # change into project path

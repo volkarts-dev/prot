@@ -61,8 +61,10 @@ __do_sync_project() {
     if [ -e ".git" ]; then
         std_out "${col_wt}Synching project $CURRENT_PROJECT${col_off}"
 
-         local remote=`get_project_remote "$CURRENT_PROJECT"`
-        __update_remote "$remote"
+        local remote=`get_project_remote "$CURRENT_PROJECT"`
+        local remote_url=`get_remote_config "$remote" "url"`
+        [[ "$remote_url" == *"/" ]] || remote_url="$remote_url/"
+        __update_remote "$remote_url"
 
         git_update
         ret=$?

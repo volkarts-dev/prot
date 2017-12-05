@@ -16,9 +16,54 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-__STASH_PREFIX="PROT-STASH:"
+git_wrapper() {
+    local cmd=
+    if [ "$1" == "k" ]; then
+        cmd="gitk"
+        shift
+    else
+        cmd="git"
+    fi
 
-git_branch_stash_save() {
+    ltrace "call:" "$cmd" "$@"
+
+    "$cmd" "$@"
+
+    return $?
+}
+
+__STASH_PREFIX="PROT-STASH: "
+
+git_stash_save()
+{
+    local local_branch
+
+    git_status
+    [ $? -eq 0 ] && return 0
+
+    local_branch=`git_wrapper symbolic-ref --short HEAD 2>/dev/null`
+    if [ "$local_branch" == "" ]; then
+        local_branch=`git_wrapper rev-parse HEAD 2>/dev/null`
+    fi
+
+    git_wrapper stash push -u -m "${__STASH_PREFIX}WIP on ${local_branch}"
+}
+
+git_stash_pop()
+{
+    local stash_info
+
+    stash_info=`git_wrapper stash list -1 | grep "${__STASH_PREFIX}"`
+    if [ "$stash_info" == "" ]; then
+        return 0
+    fi
+
+    git_wrapper stash pop --index
+    return $?
+}
+
+git_branch_stash_save()
+{
     local head=`git_wrapper rev-parse HEAD 2>/dev/null`
     local invalid_ref=$?
     if [ $invalid_ref -ne 0 ]; then
@@ -34,17 +79,21 @@ git_branch_stash_save() {
         return 3
     fi
 
-    git_wrapper commit --allow-empty -m "${__STASH_PREFIX} index at $head"
+    git_status
+    [ $? -eq 0 ] && return 3
+
+    git_wrapper commit --allow-empty -m "${__STASH_PREFIX}index at $head"
     [ $? -ne 0 ] && return 2
 
     git_wrapper add --all
     [ $? -ne 0 ] && return 2
 
-    git_wrapper commit --allow-empty -m "${__STASH_PREFIX} working directory at $head"
+    git_wrapper commit --allow-empty -m "${__STASH_PREFIX}working directory at $head"
     [ $? -ne 0 ] && return 2
 }
 
-git_branch_stash_pop() {
+git_branch_stash_pop()
+{
     git_wrapper rev-parse HEAD >/dev/null 2>&1
     local invalid_ref=$?
     if [ $invalid_ref -ne 0 ]; then
@@ -54,13 +103,17 @@ git_branch_stash_pop() {
 
     local local_branch=`git_wrapper symbolic-ref --short HEAD 2>/dev/null`
     if [ "$local_branch" == "" ]; then
-        has_opt "--silent-3" "$@" || lerror "No stash to pop (detached head)"
+        local log=lerror
+        has_opt "--silent-3" "$@" && ldebug
+        $log "No stash to pop (detached head)"
         return 3
     fi
 
     local last_commit=`git_wrapper log -1 --pretty=%s | grep "^${__STASH_PREFIX} "`
     if [ "$last_commit" == "" ]; then
-        has_opt "--silent-3" "$@" || lerror "No stash to pop (missing stash)"
+        local log=lerror
+        has_opt "--silent-3" "$@" && ldebug
+        $log "No stash to pop (missing stash)"
         return 3
     fi
 
@@ -71,22 +124,6 @@ git_branch_stash_pop() {
     # restore staged changes
     git_wrapper reset --soft HEAD^
     [ $? -ne 0 ] && return 2
-}
-
-git_wrapper() {
-    local cmd=
-    if [ "$1" == "k" ]; then
-        cmd="gitk"
-        shift
-    else
-        cmd="git"
-    fi
-
-    linfo "call:" "$cmd" "$@"
-
-    "$cmd" "$@"
-
-    return $?
 }
 
 git_status() {
@@ -304,7 +341,7 @@ git_update() {
             lerror "Error while recover from stash"
             __git_conditional_launch_gui
             ans=`ask_options "Quit update? [y(es),N(o)]? "`
-            if [ "$ans" != "n" ]; then
+            if [ "$ans" == "y" ]; then
                 return 255
             fi
         fi

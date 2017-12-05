@@ -208,12 +208,17 @@ __forall_cmds() {
     done
 }
 
+__run_generic_git_command() {
+    std_out "${col_wt}Running 'git ${1}' in project $CURRENT_PROJECT${col_off}"
+    git_wrapper "$@"
+}
+
 __generic_git_command() {
     # initial setup
     bootstrap_repo "$@"
 
     # execute nativ git command
-    forall_cd git_wrapper "${@}"
+    forall_cd __run_generic_git_command "${@}"
 
     return $?
 }
