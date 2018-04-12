@@ -165,7 +165,9 @@ read_repo() {
                     _pp="${_pp#/}"
                     _pp="${_pp%/}"
                     local _fp="${_arg}"
-                    _fp="${_fp#./}"
+                    if [ "$_fp" != "./" -a "$_fp" != "." ]; then
+                        _fp="${_fp#./}"
+                    fi
                     _fp="${_fp#/}"
                     _fp="${_fp%/}"
                     if [ "${_pp}" == "${_fp}" ]; then
