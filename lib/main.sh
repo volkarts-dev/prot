@@ -17,7 +17,7 @@
 #
 
 # version
-PROT_VERSION=2.0b
+PROT_VERSION=2.0
 
 # global vars
 declare -A CMD_ARGS
