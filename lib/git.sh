@@ -143,6 +143,23 @@ git_status() {
     return 2
 }
 
+git_shell() {
+    local rcfile=`mktemp`
+    cat >$rcfile <<EOF
+[ -e ~/.bashrc ] && source ~/.bashrc
+source "$LIB_PATH/git_helper.sh"
+export PS1='git \$(__git_ps1 "(\e[0;35m%s\e[m)")> '
+EOF
+    bash --rcfile $rcfile </dev/tty &
+    local bash_pid=$!
+
+    while echo "`jobs -p`" | grep "$bash_pid" >/dev/null 2>&1 ; do
+        wait $bash_pid 2>/dev/null
+    done
+
+    rm $rcfile
+}
+
 git_launch_gui_with_shell() {
     local gui_cmd
 
@@ -177,20 +194,8 @@ git_launch_gui_with_shell() {
                 echo "You are in the projects root directory: $PWD."
                 echo "When you change files, remember to do a rescan in git gui."
                 echo "Type 'exit' to exit the shell."
-                local rcfile=`mktemp`
-                cat >$rcfile <<EOF
-[ -e ~/.bashrc ] && source ~/.bashrc
-source "$LIB_PATH/git_helper.sh"
-PS1="git \$(__git_ps1 '(\e[0;35m%s\e[0m)')> "
-EOF
-                bash --rcfile $rcfile </dev/tty &
-                local bash_pid=$!
+                git_shell
 
-                while echo "`jobs -p`" | grep "$bash_pid" >/dev/null 2>&1 ; do
-                    wait $bash_pid 2>/dev/null
-                done
-
-                rm $rcfile
                 trap - SIGTERM
 
                 if [ $should_exit -eq 1 ]; then
