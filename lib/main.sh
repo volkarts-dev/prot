@@ -124,7 +124,7 @@ build_manifest() {
     fi
 
     local manifest_file_name="$BASE_PATH/.repo/manifest/manifest.cfg"
-    
+
     if [ ! -f "$manifest_file_name" ]; then
         lfatal "repo does not comtain a valid manifest file"
     fi

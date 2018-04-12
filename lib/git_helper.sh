@@ -17,7 +17,6 @@
 #
 
 __git_ps1() {
-    local exit=$?
     local head
     local gitstring
 
