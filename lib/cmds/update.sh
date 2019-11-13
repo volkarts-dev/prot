@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2012-2016 by Daniel Volk <mail@volkarts.com>
+# Copyright 2012-2019 by Daniel Volk <mail@volkarts.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ __do_sync_project() {
     return $ret
 }
 
-subexec_sync() {
+subexec_update() {
     # initial setup
     bootstrap_repo "$@"
 
@@ -111,8 +111,8 @@ subexec_sync() {
     return $?
 }
 
-summary_sync() {
-    std_out "Synchronize all projects"
+summary_update() {
+    std_out "Synchronize all projects with upstream"
 }
 
 # kate space-indent on; indent-width 4; mixed-indent off; indent-mode cstyle;
