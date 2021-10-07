@@ -32,6 +32,7 @@ initialize() {
     # init vars
     FLAG_VERBOSITY=0
     FLAG_SHOW_GLOBAL_HELP=0
+    FLAG_SHOW_VERSION=0
 
     CMD_OPTIONS=()
     REPO_FILTER=()
@@ -81,6 +82,8 @@ __parse_global_args() {
             done
         elif [ "${_opt}" == "--help" ]; then
             FLAG_SHOW_GLOBAL_HELP=1
+        elif [ "${_opt}" == "--version" ]; then
+            FLAG_SHOW_VERSION=1
         elif [ "${_opt:0:1}" == "@" -o -d "${_opt}" ]; then
             REPO_FILTER+=("${_opt}")
         else
@@ -253,8 +256,12 @@ __show_cmd_summary() {
     printf "    %-10s %s\n" "$1" "$("summary_${1}")"
 }
 
+show_version() {
+    std_out "prot version $PROT_VERSION - Copyright 2017-2021 Daniel Volk <mail@volkarts.com>"
+}
+
 show_prot_header() {
-    std_out "prot version $PROT_VERSION - Copyright 2017 Daniel Volk <mail@volkarts.com>"
+    show_version
     std_out ""
 }
 
@@ -263,9 +270,10 @@ __global_usage() {
 
     std_out "Usage: $CALLER_CMD [-vh] [--help] <command> [command options...] [project paths...]"
     std_out "  Options:"
-    std_out "    -v           Increase the verbosity (-v: info, -vv: debug, -vvv: trace)"
-    std_out "                 default is warning"
-    std_out "    -h,--help    Show this help"
+    std_out "    -v            Increase the verbosity (-v: info, -vv: debug, -vvv: trace)"
+    std_out "                  default is warning"
+    std_out "    -h,--help     Show this help"
+    std_out "       --version  Show this help"
     std_out ""
     std_out "  <command> can be one of the following:"
     __forall_cmds "__show_cmd_summary"
@@ -279,6 +287,11 @@ exec_gprot() {
     initialize
 
     __parse_global_args "$@"
+
+    if [ $FLAG_SHOW_VERSION -eq 1 ]; then
+        show_version
+        return 0
+    fi
 
     find_cmd "${CMD_OPTIONS[0]}"
 
