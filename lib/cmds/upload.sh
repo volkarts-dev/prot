@@ -26,7 +26,7 @@ __do_upload() {
     fi
 
     # filter by feature
-    # only push if current project has checkout the requested feature branch
+    # only push if current project has checked out the requested feature branch
     if [ ! -z "$1" -a "$local_branch" != "$1" ]; then
         return 0
     fi
@@ -50,7 +50,7 @@ __do_upload() {
 
     local tmp_file=$(mktemp)
 
-    git_wrapper push upstream "$revision" 2>$tmp_file
+    git_wrapper push --tags upstream "$revision" 2>$tmp_file
     local ret=$?
 
     local error_out=$(cat "$tmp_file")
