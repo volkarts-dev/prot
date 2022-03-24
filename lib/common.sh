@@ -249,7 +249,7 @@ forall() {
         ret=$?
 
         # stop on error
-        if [ $ret -gt 0 ]; then
+        if [ $ret -gt 0 -a $FLAG_IGNORE_ERRORS -eq 0 ]; then
             if [ $ret -eq 255 ]; then
                 # no summary when aborting on user behave
                 summary=
@@ -291,7 +291,7 @@ forall_cd() {
         popd >/dev/null
 
         # stop on error
-        if [ $ret -gt 0 ]; then
+        if [ $ret -gt 0 -a $FLAG_IGNORE_ERRORS -eq 0 ]; then
             break
         fi
     done

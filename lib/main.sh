@@ -33,6 +33,7 @@ initialize() {
     FLAG_VERBOSITY=0
     FLAG_SHOW_GLOBAL_HELP=0
     FLAG_SHOW_VERSION=0
+    FLAG_IGNORE_ERRORS=0
 
     CMD_OPTIONS=()
     REPO_FILTER=()
@@ -77,6 +78,7 @@ __parse_global_args() {
                 case "$flag" in
                     v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
                     h) FLAG_SHOW_GLOBAL_HELP=1 ;;
+                    i) FLAG_IGNORE_ERRORS=1 ;;
                     ?) CMD_OPTIONS+=("$_opt") ;; # pass it to sub command
                 esac
             done
