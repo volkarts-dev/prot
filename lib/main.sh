@@ -72,21 +72,21 @@ bootstrap_repo() {
 __parse_global_args() {
     local _opt
     for _opt in "$@"; do
-        if [ "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
+        if [ ${#CMD_OPTIONS[@]} -eq 0 -a "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
             OPTIND=0
-            while getopts ":vh" flag "$_opt"; do
+            while getopts ":vhi" flag "$_opt"; do
                 case "$flag" in
                     v) FLAG_VERBOSITY=$((FLAG_VERBOSITY + 1)) ;;
                     h) FLAG_SHOW_GLOBAL_HELP=1 ;;
                     i) FLAG_IGNORE_ERRORS=1 ;;
-                    ?) CMD_OPTIONS+=("$_opt") ;; # pass it to sub command
+                    ?) ;;
                 esac
             done
         elif [ "${_opt}" == "--help" ]; then
             FLAG_SHOW_GLOBAL_HELP=1
-        elif [ "${_opt}" == "--version" ]; then
+        elif [ ${#CMD_OPTIONS[@]} -eq 0 -a "${_opt}" == "--version" ]; then
             FLAG_SHOW_VERSION=1
-        elif [ "${_opt:0:1}" == "@" -o -d "${_opt}" ]; then
+        elif [ ${#CMD_OPTIONS[@]} -gt 0 -a \( "${_opt:0:1}" == "@" -o -d "${_opt}" \) ]; then
             REPO_FILTER+=("${_opt}")
         else
             CMD_OPTIONS+=("$_opt")
