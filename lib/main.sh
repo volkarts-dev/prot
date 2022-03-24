@@ -17,7 +17,7 @@
 #
 
 # version
-PROT_VERSION=2.1.1
+PROT_VERSION=2.1.2
 
 # global vars
 declare -A CMD_ARGS
@@ -257,7 +257,7 @@ __show_cmd_summary() {
 }
 
 show_version() {
-    std_out "prot version $PROT_VERSION - Copyright 2017-2021 Daniel Volk <mail@volkarts.com>"
+    std_out "prot version $PROT_VERSION - Copyright 2017-2022 Daniel Volk <mail@volkarts.com>"
 }
 
 show_prot_header() {
