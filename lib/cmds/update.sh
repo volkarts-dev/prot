@@ -47,12 +47,6 @@ __init_project() {
 
     git_wrapper -c advice.detachedHead=false checkout "upstream/$revision"
     [ $? -eq 0 ] || return 5
-
-    local comsg_hook_url="${remote_url%/p/}/tools/hooks/commit-msg"
-    curl -Lo .git/hooks/commit-msg "${comsg_hook_url}"
-    [ $? -eq 0 ] || return 6
-    chmod +x .git/hooks/commit-msg
-    [ $? -eq 0 ] || return 6
 }
 
 __do_sync_project() {
