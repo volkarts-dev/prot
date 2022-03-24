@@ -100,7 +100,7 @@ subexec_update() {
     read_repo
 
     # update projects
-    forall_cd __do_sync_project
+    forall_cd --allow-missing __do_sync_project
 
     return $?
 }

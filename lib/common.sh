@@ -268,6 +268,12 @@ forall() {
 
 forall_cd() {
     local ret=0
+    local allow_missing=0
+
+    if [ "$1" == "--allow-missing" ]; then
+        allow_missing=1
+        shift
+    fi
 
     for CURRENT_PROJECT in "${PROJECTS[@]}"; do
         linfo "forall_cd(): Processing project $CURRENT_PROJECT"
@@ -280,7 +286,14 @@ forall_cd() {
             lerror "Project $CURRENT_PROJECT has no path configured"
             return 1
         fi
+
+        if [ ! -e "$BASE_PATH/$project_path/.git" -a $allow_missing -eq 0 ]; then
+            std_err "${col_yl}No working tree found for project $CURRENT_PROJECT. Run prot update to fix.${col_off}"
+            continue
+        fi
+
         [ -e "$BASE_PATH/$project_path" ] || mkdir -p "$BASE_PATH/$project_path"
+
         pushd "$BASE_PATH/$project_path" >/dev/null
 
         # execute command
