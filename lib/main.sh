@@ -28,13 +28,14 @@ source "${LIBRARY_PATH}/common.sh"
 # git sub commands
 source "${LIBRARY_PATH}/git.sh"
 
-initialize() {
+__initialize() {
     # init vars
     FLAG_VERBOSITY=0
     FLAG_SHOW_GLOBAL_HELP=0
     FLAG_SHOW_VERSION=0
     FLAG_IGNORE_ERRORS=0
 
+    ALL_COMMANDS=()
     CMD_OPTIONS=()
     REPO_FILTER=()
 
@@ -186,12 +187,17 @@ read_repo() {
 }
 
 find_cmd() {
-    if [ -e "$LIB_PATH/cmds/$1.sh" ]; then
-        if [ "$2" != "--keep-cmd" ]; then
-            COMMAND=$1
+    for cmd in "${ALL_COMMANDS[@]}"; do
+        if [ "$1" == "$cmd" ]; then
+            if [ "$2" != "--keep-cmd" ]; then
+                cmd=${1//-/_};
+                COMMAND=$cmd
+            fi
+            return 0
         fi
-        source "$LIB_PATH/cmds/$1.sh"
-    fi
+    done
+
+    return 1
 }
 
 __find_git_cmd() {
@@ -207,12 +213,19 @@ __find_git_cmd() {
 __forall_cmds() {
     local action="$1"
     local cmd
+    for cmd in "${ALL_COMMANDS[@]}"; do
+        "$action" "$cmd"
+    done
+}
+
+__load_cmds() {
     for cmdf in `ls -1 ${LIBRARY_PATH}/cmds/*.sh 2>/dev/null`; do
         local cmd=${cmdf%.sh}
         cmd=${cmd##*/}
 
+        ALL_COMMANDS+=("$cmd")
+
         source "$cmdf"
-        "$action" "$cmd"
     done
 }
 
@@ -286,7 +299,8 @@ __global_usage() {
 }
 
 exec_gprot() {
-    initialize
+    __initialize
+    __load_cmds
 
     __parse_global_args "$@"
 
