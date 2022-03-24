@@ -202,7 +202,7 @@ find_cmd() {
 
 __find_git_cmd() {
     local c
-    for c in `git help -a | grep "^  [a-z]" | tr ' ' '\n' | grep -v "^$"`; do
+    for c in `git help -a | grep --color=none -v "^$" | grep --color=none "^\s" | sed -r 's/\s+(\S+).*/\1/'`; do
         if [ "$c" == "$1" ]; then
             return 0
         fi
