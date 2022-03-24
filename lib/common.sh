@@ -171,9 +171,9 @@ lfatal() {
         shift
         shift
     fi
-        
+
     std_err "\e[1;31m[FATAL]\e[0m $@"
-    
+
     if [ "$usage_callback" != "" ]; then
         std_err ""
         std_err $($usage_callback)
