@@ -147,7 +147,7 @@ git_shell() {
     local rcfile=`mktemp`
     cat >$rcfile <<EOF
 [ -e ~/.bashrc ] && source ~/.bashrc
-source "$LIB_PATH/git_helper.sh"
+source "${LIBRARY_PATH}/git_helper.sh"
 export PS1='git \$(__git_ps1 "(\e[0;35m%s\e[m)")> '
 EOF
     bash --rcfile $rcfile </dev/tty &

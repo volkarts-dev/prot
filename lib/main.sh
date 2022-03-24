@@ -23,10 +23,10 @@ PROT_VERSION=2.1.2
 declare -A CMD_ARGS
 
 # common functions
-source "$LIB_PATH/common.sh"
+source "${LIBRARY_PATH}/common.sh"
 
 # git sub commands
-source "$LIB_PATH/git.sh"
+source "${LIBRARY_PATH}/git.sh"
 
 initialize() {
     # init vars
@@ -207,7 +207,7 @@ __find_git_cmd() {
 __forall_cmds() {
     local action="$1"
     local cmd
-    for cmdf in `ls -1 $LIB_PATH/cmds/*.sh 2>/dev/null`; do
+    for cmdf in `ls -1 ${LIBRARY_PATH}/cmds/*.sh 2>/dev/null`; do
         local cmd=${cmdf%.sh}
         cmd=${cmd##*/}
 
