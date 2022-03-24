@@ -53,7 +53,7 @@ __do_sync_project() {
     local ret
 
     if [ -e ".git" ]; then
-        std_out "${col_wt}Synching project $CURRENT_PROJECT${col_off}"
+        std_out "${col_wt}Update project $CURRENT_PROJECT from upstream${col_off}"
 
         local remote=`get_project_remote "$CURRENT_PROJECT"`
         local remote_url=`get_remote_config "$remote" "url"`
