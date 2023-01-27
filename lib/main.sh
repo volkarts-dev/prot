@@ -17,7 +17,7 @@
 #
 
 # version
-PROT_VERSION=2.2.0
+PROT_VERSION=2.2.1
 
 # global vars
 declare -A CMD_ARGS
@@ -86,7 +86,7 @@ __parse_global_args() {
             done
         elif [ "${_opt}" == "--help" ]; then
             FLAG_SHOW_GLOBAL_HELP=1
-        elif [ "#{_opt}" == "--" ]; then
+        elif [ "${_opt}" == "--" ]; then
             cmd_args_only=1
         elif [ ${#CMD_OPTIONS[@]} -eq 0 -a "${_opt}" == "--version" ]; then
             FLAG_SHOW_VERSION=1
@@ -96,6 +96,9 @@ __parse_global_args() {
             CMD_OPTIONS+=("$_opt")
         fi
     done
+
+    ltrace "Repo filter: ${REPO_FILTER[@]}"
+    ltrace "CMD options: ${CMD_OPTIONS[@]}"
 
     return 0
 }
