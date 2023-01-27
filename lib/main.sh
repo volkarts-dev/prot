@@ -72,6 +72,7 @@ bootstrap_repo() {
 
 __parse_global_args() {
     local _opt
+    local cmd_args_only=0
     for _opt in "$@"; do
         if [ ${#CMD_OPTIONS[@]} -eq 0 -a "${_opt:0:1}" == "-" -a "${_opt:0:2}" != "--" ]; then
             OPTIND=0
@@ -85,9 +86,11 @@ __parse_global_args() {
             done
         elif [ "${_opt}" == "--help" ]; then
             FLAG_SHOW_GLOBAL_HELP=1
+        elif [ "#{_opt}" == "--" ]; then
+            cmd_args_only=1
         elif [ ${#CMD_OPTIONS[@]} -eq 0 -a "${_opt}" == "--version" ]; then
             FLAG_SHOW_VERSION=1
-        elif [ ${#CMD_OPTIONS[@]} -gt 0 -a \( "${_opt:0:1}" == "@" -o -d "${_opt}" \) ]; then
+        elif [ ${cmd_args_only} -eq 0 -a \( "${_opt:0:1}" == "@" -o -d "${_opt}" \) ]; then
             REPO_FILTER+=("${_opt}")
         else
             CMD_OPTIONS+=("$_opt")
